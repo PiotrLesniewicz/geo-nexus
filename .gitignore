@@ -1,0 +1,30 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Copilot & AI
+copilot.data.migration.*.xml
+
+# Systemy
+.DS_Store
+Thumbs.db
+
+# Inne IDE
+.vscode/
+.classpath
+.project
+.settings/
+bin/
+/.idea/
+docs/TODO.md
+docs/DEVLOG.md
+docs/QUESTION.md
+docs/IDEAS.md
