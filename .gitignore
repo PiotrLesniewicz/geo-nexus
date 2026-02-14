@@ -17,14 +17,11 @@ copilot.data.migration.*.xml
 .DS_Store
 Thumbs.db
 
-# Inne IDE
+# Other IDE
 .vscode/
 .classpath
 .project
 .settings/
 bin/
 /.idea/
-docs/TODO.md
-docs/DEVLOG.md
-docs/QUESTION.md
-docs/IDEAS.md
+/docs/
