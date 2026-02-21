@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <charset>UTF-8</charset>
+            <pattern>%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <!--    &lt;!&ndash;pokazuje tylko zapytania SQL.&ndash;&gt;-->
+    <!--        <logger name="org.hibernate.SQL" level="DEBUG"/>-->
+    <!--    &lt;!&ndash;pokazuje wartości parametrów.&ndash;&gt;-->
+    <!--    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>-->
+    <!--    &lt;!&ndash; Szczegóły dotyczące bindowania (bind param [1] as [VARCHAR] - [value]) parametrów w zapytaniach SQL generowanych przez Hibernate&ndash;&gt;-->
+    <!--    <logger name="org.hibernate.orm.jdbc.bind" additivity="false" level="TRACE">-->
+    <!--        <appender-ref ref="CONSOLE"/>-->
+    <!--    </logger>-->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
