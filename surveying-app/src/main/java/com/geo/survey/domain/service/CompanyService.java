@@ -51,6 +51,14 @@ public class CompanyService {
                 );
     }
 
+    public Company findById(Long companyId) {
+        return companyRepository.findById(companyId)
+                .map(mapper::toDomain)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Company with companyId [%s] does not exist".formatted(companyId))
+                );
+    }
+
     private void validateNipUniqueness(String nip) {
         if (companyRepository.existsByNip(nip)) {
             throw new ResourceAlreadyExistsException("Company with nip [%s] already exists".formatted(nip));
