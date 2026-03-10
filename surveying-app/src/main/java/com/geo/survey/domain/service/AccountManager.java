@@ -38,6 +38,18 @@ public class AccountManager {
         userService.deleteUser(email);
     }
 
+    @Transactional
+    public void blockCompany(String nip) {
+        validateNotNull(nip);
+        companyService.blockCompany(nip);
+    }
+
+    @Transactional
+    public void activateCompany(String nip) {
+        validateNotNull(nip);
+        companyService.activateCompany(nip);
+    }
+
     private void validateNotNull(Object... args) {
         for (Object arg : args) {
             if (arg == null) {

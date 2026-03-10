@@ -225,4 +225,33 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining(nonExistentEmail);
     }
+
+    // tests for block and activate company
+    @Test
+    void shouldBlockActiveCompany() {
+        // given
+        String nip = "1234567890"; // GeoSurvey — active from test_data_account.sql
+
+        // when
+        accountManager.blockCompany(nip);
+
+        // then
+        Company blocked = companyService.findByNip(nip);
+        assertThat(blocked.isActive()).isFalse();
+        assertThat(blocked.getBlockedAt()).isNotNull();
+    }
+
+    @Test
+    void shouldActivateBlockedCompany() {
+        // given
+        String nip = "1122334455"; // TerraMap — blocked from test_data_account.sql
+
+        // when
+        accountManager.activateCompany(nip);
+
+        // then
+        Company activated = companyService.findByNip(nip);
+        assertThat(activated.isActive()).isTrue();
+        assertThat(activated.getBlockedAt()).isNull();
+    }
 }
