@@ -1,9 +1,6 @@
 package unit;
 
-import com.geo.survey.domain.exception.ResourceActiveException;
-import com.geo.survey.domain.exception.ResourceAlreadyExistsException;
-import com.geo.survey.domain.exception.ResourceNotFoundException;
-import com.geo.survey.domain.exception.RoleException;
+import com.geo.survey.domain.exception.*;
 import com.geo.survey.domain.model.Role;
 import com.geo.survey.domain.model.User;
 import com.geo.survey.domain.service.UserService;
@@ -22,8 +19,7 @@ import java.time.ZoneOffset;
 import java.util.Optional;
 
 import static data.UserFixture.*;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -163,6 +159,39 @@ class UserServiceTest {
 
         verify(userRepository).findByEmail(DEFAULT_EMAIL);
         verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldThrowException_WhenDeletingLastActiveAdmin() {
+        // given
+        User admin = activeAdmin();
+        String email = admin.getEmail();
+
+        when(userRepository.findByEmail(email))
+                .thenReturn(Optional.of(userMapper.toEntity(admin)));
+        when(userRepository.countActiveAdminsByCompanyId(1L)).thenReturn(1L);
+
+        // when, then
+        assertThatThrownBy(() -> userService.deleteUser(email))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("Cannot delete the last active admin of the company");
+    }
+
+    @Test
+    void shouldAllowDeletingAdminWhenAnotherAdminExists() {
+        // given
+        mockClock();
+        User admin = activeAdmin();
+        String email = admin.getEmail();
+
+        when(userRepository.findByEmail(email))
+                .thenReturn(Optional.of(userMapper.toEntity(admin)));
+        when(userRepository.countActiveAdminsByCompanyId(1L)).thenReturn(2L);
+        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // when then
+        assertThatCode(() -> userService.deleteUser(email))
+                .doesNotThrowAnyException();
     }
 
     private void mockClock() {

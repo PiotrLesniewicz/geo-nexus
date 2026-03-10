@@ -1,5 +1,6 @@
 package com.geo.survey.domain.service;
 
+import com.geo.survey.domain.exception.BusinessRuleViolationException;
 import com.geo.survey.domain.exception.ResourceAlreadyExistsException;
 import com.geo.survey.domain.exception.ResourceNotFoundException;
 import com.geo.survey.domain.model.Role;
@@ -42,7 +43,11 @@ public class UserService {
     }
 
     public User deleteUser(String email) {
-        User deleted = findByEmail(email).delete(clock);
+        User user = findByEmail(email);
+        if (user.getRole() == Role.ADMIN && isLastActiveAdmin(user.getCompany().getId())) {
+            throw new BusinessRuleViolationException("Cannot delete the last active admin of the company");
+        }
+        User deleted = user.delete(clock);
         return mapper.toDomain(userRepository.save(mapper.toEntity(deleted)));
     }
 
@@ -56,5 +61,9 @@ public class UserService {
             throw new ResourceAlreadyExistsException(
                     "User with email [%s] already exists".formatted(email));
         }
+    }
+
+    private boolean isLastActiveAdmin(Long companyId) {
+        return userRepository.countActiveAdminsByCompanyId(companyId) <= 1;
     }
 }

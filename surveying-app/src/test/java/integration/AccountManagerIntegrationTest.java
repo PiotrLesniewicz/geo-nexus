@@ -1,6 +1,7 @@
 package integration;
 
 import com.geo.survey.AppRunner;
+import com.geo.survey.domain.exception.BusinessRuleViolationException;
 import com.geo.survey.domain.exception.ResourceAlreadyExistsException;
 import com.geo.survey.domain.exception.ResourceNotFoundException;
 import com.geo.survey.domain.model.*;
@@ -187,5 +188,41 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
         assertThatThrownBy(() -> accountManager.registerUser(companyId, user, DEFAULT_PASSWORD))
                 .isInstanceOf(ResourceAlreadyExistsException.class)
                 .hasMessageContaining(user.getEmail());
+    }
+
+    // tests for delete user
+    @Test
+    void shouldSoftDeleteUser() {
+        // given
+        String email = "anna.nowak@geosurvey.pl"; // SURVEYOR from test_data_account.sql
+
+        // when
+        accountManager.deleteUser(email);
+
+        // then
+        User deleted = userService.findByEmail(email);
+        assertThat(deleted.isActive()).isFalse();
+        assertThat(deleted.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    void shouldThrowException_WhenDeletingLastActiveAdmin() {
+        // given — jan.kowalski is the only active ADMIN in company 1
+        String email = "jan.kowalski@geosurvey.pl";
+
+        // when then
+        assertThatThrownBy(() -> accountManager.deleteUser(email))
+                .isInstanceOf(BusinessRuleViolationException.class);
+    }
+
+    @Test
+    void shouldThrowException_WhenUserNotFound() {
+        // given
+        String nonExistentEmail = "nobody@nowhere.com";
+
+        // when then
+        assertThatThrownBy(() -> accountManager.deleteUser(nonExistentEmail))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining(nonExistentEmail);
     }
 }

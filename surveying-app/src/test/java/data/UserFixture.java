@@ -36,7 +36,7 @@ public final class UserFixture {
                 .role(Role.ADMIN)
                 .active(true)
                 .registerAt(fixedDateTime())
-                .company(CompanyFixture.activeCompany())
+                .company(CompanyFixture.activeCompanyWithId())
                 .build();
     }
 

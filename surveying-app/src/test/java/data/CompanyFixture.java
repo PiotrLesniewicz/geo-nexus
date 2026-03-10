@@ -23,6 +23,15 @@ public final class CompanyFixture {
                 .build();
     }
 
+    public static Company activeCompanyWithId() {
+        return Company.builder()
+                .id(1L)
+                .name(DEFAULT_NAME)
+                .nip(DEFAULT_NIP)
+                .active(true)
+                .build();
+    }
+
     public static Company blockedCompany() {
         return Company.builder()
                 .name(DEFAULT_NAME)

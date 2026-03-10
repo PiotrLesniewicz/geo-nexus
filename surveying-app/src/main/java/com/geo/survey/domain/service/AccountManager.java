@@ -32,6 +32,12 @@ public class AccountManager {
         userAuthService.save(savedUser, password);
     }
 
+    @Transactional
+    public void deleteUser(String email) {
+        validateNotNull(email);
+        userService.deleteUser(email);
+    }
+
     private void validateNotNull(Object... args) {
         for (Object arg : args) {
             if (arg == null) {
