@@ -1,5 +1,6 @@
 package com.geo.survey.domain.model;
 
+import com.geo.survey.math.value.LevelingType;
 import lombok.Builder;
 import lombok.Value;
 import lombok.With;

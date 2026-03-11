@@ -21,27 +21,27 @@ public class JobEntity {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "job_identifier", nullable = false)
+    @Column(name = "job_identifier" , nullable = false)
     private String jobIdentifier;
 
     @Embedded
     private AddressEntity address;
 
-    @Column(name = "status", nullable = false)
+    @Column(name = "status" , nullable = false)
     @Enumerated(EnumType.STRING)
     private StatusJob status;
 
     @Column(name = "description")
     private String description;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at" , nullable = false)
     private OffsetDateTime createdAt;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "company_id", nullable = false)
+    @JoinColumn(name = "company_id" , nullable = false)
     private CompanyEntity company;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id" , nullable = false)
     private UserEntity user;
 }

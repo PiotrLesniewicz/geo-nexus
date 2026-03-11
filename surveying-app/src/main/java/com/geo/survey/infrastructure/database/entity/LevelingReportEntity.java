@@ -1,6 +1,6 @@
 package com.geo.survey.infrastructure.database.entity;
 
-import com.geo.survey.domain.model.LevelingType;
+import com.geo.survey.math.value.LevelingType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -25,7 +25,7 @@ public class LevelingReportEntity {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "leveling_type", nullable = false)
+    @Column(name = "leveling_type" , nullable = false)
     @Enumerated(EnumType.STRING)
     private LevelingType levelingType;
 
@@ -35,36 +35,36 @@ public class LevelingReportEntity {
     @Column(name = "end_height")
     private BigDecimal endHeight;
 
-    @Column(name = "measured_difference", nullable = false)
+    @Column(name = "measured_difference" , nullable = false)
     private BigDecimal measuredDifference;
 
-    @Column(name = "theoretical_difference", nullable = false)
+    @Column(name = "theoretical_difference" , nullable = false)
     private BigDecimal theoreticalDifference;
 
-    @Column(name = "misclosure", nullable = false)
+    @Column(name = "misclosure" , nullable = false)
     private BigDecimal misclosure;
 
-    @Column(name = "allowed_misclosure", nullable = false)
+    @Column(name = "allowed_misclosure" , nullable = false)
     private BigDecimal allowedMisclosure;
 
-    @Column(name = "is_within_tolerance", nullable = false)
+    @Column(name = "is_within_tolerance" , nullable = false)
     private boolean isWithinTolerance;
 
     @Column(name = "sequence_distance")
     private BigDecimal sequenceDistance;
 
-    @Column(name = "observation_time", nullable = false)
+    @Column(name = "observation_time" , nullable = false)
     private OffsetDateTime observationTime;
 
-    @Column(name = "generated_at", nullable = false)
+    @Column(name = "generated_at" , nullable = false)
     private OffsetDateTime generatedAt;
 
     @ToString.Exclude
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "stations", columnDefinition = "jsonb", nullable = false)
+    @Column(name = "stations" , columnDefinition = "jsonb" , nullable = false)
     private List<LevelingStationSnapshot> stations;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "job_id", nullable = false)
+    @JoinColumn(name = "job_id" , nullable = false)
     private JobEntity job;
 }
