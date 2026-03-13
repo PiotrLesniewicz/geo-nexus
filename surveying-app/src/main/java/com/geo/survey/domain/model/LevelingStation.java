@@ -24,7 +24,7 @@ public class LevelingStation {
     BigDecimal heightDiffSecond;
     BigDecimal heightAvgDiff;
     BigDecimal stationError;
-    boolean isWithinTolerance;
+    boolean withTolerance;
     BigDecimal correction;
     BigDecimal adjustedHeight;
 }

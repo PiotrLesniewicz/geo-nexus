@@ -83,7 +83,7 @@ class OneWayDoubleLevelingTest {
 
         //then
         assertThat(result.misclosure()).isCloseTo(expected, within(1e-6));
-        assertThat(result.isWithinTolerance()).isFalse();
+        assertThat(result.withTolerance()).isFalse();
         assertThat(Math.abs(result.misclosure()))
                 .withFailMessage("Expected misclosure (%s) to be greater than allowed (%s)",
                         result.misclosure(), result.allowedMisclosure())

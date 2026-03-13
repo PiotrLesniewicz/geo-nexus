@@ -11,7 +11,7 @@ public record LevelingResultReport(
         double misclosure,
         double allowedMisclosure,
         double sequenceDistance,
-        boolean isWithinTolerance
+        boolean withTolerance
 ) {
     public static Builder builder() {
         return new Builder();
@@ -26,7 +26,7 @@ public record LevelingResultReport(
         private double misclosure;
         private double allowedMisclosure;
         private double sequenceDistance;
-        private boolean isWithinTolerance;
+        private boolean withTolerance;
 
         public Builder startH(Double startH) {
             this.startH = startH;
@@ -68,8 +68,8 @@ public record LevelingResultReport(
             return this;
         }
 
-        public Builder isWithinTolerance(boolean isWithinTolerance) {
-            this.isWithinTolerance = isWithinTolerance;
+        public Builder withTolerance(boolean withTolerance) {
+            this.withTolerance = withTolerance;
             return this;
         }
 
@@ -83,7 +83,7 @@ public record LevelingResultReport(
                     misclosure,
                     allowedMisclosure,
                     sequenceDistance,
-                    isWithinTolerance
+                    withTolerance
             );
         }
     }

@@ -1,7 +1,6 @@
 package com.geo.survey.infrastructure.database.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
@@ -44,8 +43,7 @@ public class LevelingStationSnapshot {
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     BigDecimal stationError;
 
-    @JsonProperty("isWithinTolerance")
-    boolean isWithinTolerance;
+    boolean withTolerance;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     BigDecimal correction;
