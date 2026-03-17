@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.geo.survey.math.engine.LevelingEngine;
+import com.geo.survey.math.engine.OneWayDoubleLeveling;
+import com.geo.survey.math.engine.OneWayLeveling;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -25,5 +28,15 @@ public class ConfigurationBean {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         return mapper;
+    }
+
+    @Bean
+    public LevelingEngine oneWayLeveling() {
+        return new OneWayLeveling();
+    }
+
+    @Bean
+    public LevelingEngine oneWayDoubleLeveling() {
+        return new OneWayDoubleLeveling();
     }
 }

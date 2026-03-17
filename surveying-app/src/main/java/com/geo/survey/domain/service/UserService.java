@@ -42,6 +42,14 @@ public class UserService {
                 );
     }
 
+    public User findById(Long userId) {
+        return userRepository.findById(userId)
+                .map(mapper::toDomain)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User with userId [%s] does not exist".formatted(userId))
+                );
+    }
+
     public User deleteUser(String email) {
         User user = findByEmail(email);
         if (user.getRole() == Role.ADMIN && isLastActiveAdmin(user.getCompany().getId())) {
