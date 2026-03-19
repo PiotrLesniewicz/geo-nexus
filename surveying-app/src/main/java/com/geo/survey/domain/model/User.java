@@ -1,7 +1,6 @@
 package com.geo.survey.domain.model;
 
-import com.geo.survey.domain.exception.ResourceActiveException;
-import com.geo.survey.domain.exception.RoleException;
+import com.geo.survey.domain.exception.BusinessRuleViolationException;
 import lombok.Builder;
 import lombok.Value;
 import lombok.With;
@@ -38,7 +37,7 @@ public class User {
 
     public User delete(Clock clock) {
         if (!this.active) {
-            throw new ResourceActiveException("User is already deleted: [%s]".formatted(email));
+            throw new BusinessRuleViolationException("User is already deleted: [%s]".formatted(email));
         }
         return toBuilder()
                 .active(false)
@@ -48,7 +47,7 @@ public class User {
 
     public User changeRole(Role newRole) {
         if (this.role == newRole) {
-            throw new RoleException("User [%s] already has role [%s]".formatted(email, newRole));
+            throw new BusinessRuleViolationException("User [%s] already has role [%s]".formatted(email, newRole));
         }
         return toBuilder()
                 .role(newRole)

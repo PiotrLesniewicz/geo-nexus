@@ -1,6 +1,6 @@
 package unit;
 
-import com.geo.survey.domain.exception.ResourceAlreadyExistsException;
+import com.geo.survey.domain.exception.BusinessRuleViolationException;
 import com.geo.survey.domain.exception.ResourceNotFoundException;
 import com.geo.survey.domain.model.Company;
 import com.geo.survey.domain.model.Job;
@@ -124,7 +124,7 @@ class JobServiceTest {
 
         // when, then
         assertThatThrownBy(() -> jobService.create(jobToCreate, company, user))
-                .isInstanceOf(ResourceAlreadyExistsException.class)
+                .isInstanceOf(BusinessRuleViolationException.class)
                 .hasMessageContaining("Job already exists")
                 .hasMessageContaining(DEFAULT_JOB_IDENTIFIER);
 

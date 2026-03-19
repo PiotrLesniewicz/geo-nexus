@@ -1,6 +1,6 @@
 package com.geo.survey.domain.service;
 
-import com.geo.survey.domain.exception.ResourceAlreadyExistsException;
+import com.geo.survey.domain.exception.BusinessRuleViolationException;
 import com.geo.survey.domain.exception.ResourceNotFoundException;
 import com.geo.survey.domain.model.Company;
 import com.geo.survey.domain.model.Job;
@@ -45,7 +45,7 @@ public class JobService {
 
     public Job create(Job job, Company company, User user) {
         if (jobRepository.existsByJobIdentifier(job.getJobIdentifier())) {
-            throw new ResourceAlreadyExistsException(
+            throw new BusinessRuleViolationException(
                     "Job already exists with identifier: [%s]".formatted(job.getJobIdentifier()));
         }
         Job toSave = Job.create(job, company, user, clock);

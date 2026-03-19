@@ -1,6 +1,6 @@
 package com.geo.survey.domain.model;
 
-import com.geo.survey.domain.exception.ResourceActiveException;
+import com.geo.survey.domain.exception.BusinessRuleViolationException;
 import lombok.Builder;
 import lombok.Value;
 import lombok.With;
@@ -33,7 +33,7 @@ public class Company {
 
     public Company activate() {
         if (this.active) {
-            throw new ResourceActiveException("Company is already active");
+            throw new BusinessRuleViolationException("Company is already active");
         }
         return toBuilder()
                 .active(true)
@@ -43,7 +43,7 @@ public class Company {
 
     public Company block(Clock clock) {
         if (!this.active) {
-            throw new ResourceActiveException("Company is already deactivated");
+            throw new BusinessRuleViolationException("Company is already deactivated");
         }
         return toBuilder()
                 .active(false)

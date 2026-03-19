@@ -1,7 +1,6 @@
 package unit;
 
 import com.geo.survey.domain.exception.BusinessRuleViolationException;
-import com.geo.survey.domain.exception.ResourceActiveException;
 import com.geo.survey.domain.exception.ResourceNotFoundException;
 import com.geo.survey.domain.model.Company;
 import com.geo.survey.domain.service.CompanyService;
@@ -121,7 +120,7 @@ class CompanyServiceTest {
         Company company = blockedCompany();
         // when & then
         assertThatThrownBy(() -> companyService.blockCompany(company))
-                .isInstanceOf(ResourceActiveException.class);
+                .isInstanceOf(BusinessRuleViolationException.class);
 
         verify(companyRepository, never()).save(any());
     }
@@ -148,7 +147,7 @@ class CompanyServiceTest {
 
         //when, then
         assertThatThrownBy(() -> companyService.activateCompany(company))
-                .isInstanceOf(ResourceActiveException.class);
+                .isInstanceOf(BusinessRuleViolationException.class);
 
         verify(companyRepository, never()).save(any());
     }

@@ -119,7 +119,7 @@ class UserServiceTest {
 
         // when & then
         assertThatThrownBy(() -> userService.changeRole(DEFAULT_EMAIL, Role.SURVEYOR))
-                .isInstanceOf(RoleException.class)
+                .isInstanceOf(BusinessRuleViolationException.class)
                 .hasMessageContaining(DEFAULT_EMAIL);
 
         verify(userRepository).findByEmail(DEFAULT_EMAIL);
