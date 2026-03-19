@@ -74,7 +74,7 @@ class UserServiceTest {
 
         // when & then
         assertThatThrownBy(() -> userService.save(user))
-                .isInstanceOf(ResourceAlreadyExistsException.class)
+                .isInstanceOf(BusinessRuleViolationException.class)
                 .hasMessageContaining(DEFAULT_EMAIL);
 
         verify(userRepository).existsByEmail(DEFAULT_EMAIL);
@@ -92,41 +92,6 @@ class UserServiceTest {
                 .hasMessageContaining(DEFAULT_EMAIL);
 
         verify(userRepository).findByEmail(DEFAULT_EMAIL);
-    }
-
-    @Test
-    void shouldDeletedActiveUser() {
-        // given
-        mockClock();
-        when(userRepository.findByEmail(DEFAULT_EMAIL))
-                .thenReturn(Optional.of(userMapper.toEntity(activeUser())));
-        when(userRepository.save(any(UserEntity.class)))
-                .thenAnswer(i -> i.getArgument(0));
-
-        // when
-        User result = userService.deleteUser(DEFAULT_EMAIL);
-
-        // then
-        assertThat(result)
-                .returns(false, User::isActive)
-                .returns(fixedDateTime(), User::getDeletedAt);
-        verify(userRepository).findByEmail(DEFAULT_EMAIL);
-        verify(userRepository).save(any(UserEntity.class));
-    }
-
-    @Test
-    void shouldThrowException_WhenDeleteAlreadyDeletedUser() {
-        // given
-        when(userRepository.findByEmail(DEFAULT_EMAIL))
-                .thenReturn(Optional.of(userMapper.toEntity(blockedUser())));
-
-        // when & then
-        assertThatThrownBy(() -> userService.deleteUser(DEFAULT_EMAIL))
-                .isInstanceOf(ResourceActiveException.class)
-                .hasMessageContaining(DEFAULT_EMAIL);
-
-        verify(userRepository).findByEmail(DEFAULT_EMAIL);
-        verify(userRepository, never()).save(any());
     }
 
     @Test
@@ -159,39 +124,6 @@ class UserServiceTest {
 
         verify(userRepository).findByEmail(DEFAULT_EMAIL);
         verify(userRepository, never()).save(any());
-    }
-
-    @Test
-    void shouldThrowException_WhenDeletingLastActiveAdmin() {
-        // given
-        User admin = activeAdmin();
-        String email = admin.getEmail();
-
-        when(userRepository.findByEmail(email))
-                .thenReturn(Optional.of(userMapper.toEntity(admin)));
-        when(userRepository.countActiveAdminsByCompanyId(1L)).thenReturn(1L);
-
-        // when, then
-        assertThatThrownBy(() -> userService.deleteUser(email))
-                .isInstanceOf(BusinessRuleViolationException.class)
-                .hasMessageContaining("Cannot delete the last active admin of the company");
-    }
-
-    @Test
-    void shouldAllowDeletingAdminWhenAnotherAdminExists() {
-        // given
-        mockClock();
-        User admin = activeAdmin();
-        String email = admin.getEmail();
-
-        when(userRepository.findByEmail(email))
-                .thenReturn(Optional.of(userMapper.toEntity(admin)));
-        when(userRepository.countActiveAdminsByCompanyId(1L)).thenReturn(2L);
-        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-        // when then
-        assertThatCode(() -> userService.deleteUser(email))
-                .doesNotThrowAnyException();
     }
 
     private void mockClock() {

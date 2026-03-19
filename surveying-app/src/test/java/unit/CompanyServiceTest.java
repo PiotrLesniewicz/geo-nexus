@@ -1,7 +1,7 @@
 package unit;
 
+import com.geo.survey.domain.exception.BusinessRuleViolationException;
 import com.geo.survey.domain.exception.ResourceActiveException;
-import com.geo.survey.domain.exception.ResourceAlreadyExistsException;
 import com.geo.survey.domain.exception.ResourceNotFoundException;
 import com.geo.survey.domain.model.Company;
 import com.geo.survey.domain.service.CompanyService;
@@ -11,7 +11,6 @@ import com.geo.survey.infrastructure.mapper.AddressMapper;
 import com.geo.survey.infrastructure.mapper.AddressMapperImpl;
 import com.geo.survey.infrastructure.mapper.CompanyMapper;
 import com.geo.survey.infrastructure.mapper.CompanyMapperImpl;
-import data.CompanyFixture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,7 +33,6 @@ import static org.mockito.Mockito.*;
 class CompanyServiceTest {
 
     private CompanyService companyService;
-    private CompanyMapper companyMapper;
 
     @Mock
     private CompanyRepository companyRepository;
@@ -44,7 +42,7 @@ class CompanyServiceTest {
     @BeforeEach
     void setUp() {
         AddressMapper addressMapper = new AddressMapperImpl();
-        companyMapper = new CompanyMapperImpl(addressMapper);
+        CompanyMapper companyMapper = new CompanyMapperImpl(addressMapper);
         companyService = new CompanyService(companyRepository, companyMapper, clock);
     }
 
@@ -52,7 +50,7 @@ class CompanyServiceTest {
     void shouldCorrectlySaveCompany_WhenCompanyDoesNotExist() {
         // given
         mockClock();
-        Company company = CompanyFixture.companyWithAddress();
+        Company company = companyWithAddress();
 
         when(companyRepository.existsByNip(DEFAULT_NIP)).thenReturn(false);
         when(companyRepository.save(any(CompanyEntity.class)))
@@ -75,13 +73,13 @@ class CompanyServiceTest {
     @Test
     void shouldThrowException_WhenNipAlreadyExists() {
         // given
-        Company company = CompanyFixture.companyWithoutStatus();
+        Company company = companyWithoutStatus();
 
         when(companyRepository.existsByNip(DEFAULT_NIP)).thenReturn(true);
 
         // when & then
         assertThatThrownBy(() -> companyService.save(company))
-                .isInstanceOf(ResourceAlreadyExistsException.class)
+                .isInstanceOf(BusinessRuleViolationException.class)
                 .hasMessageContaining(DEFAULT_NIP);
 
         verify(companyRepository).existsByNip(DEFAULT_NIP);
@@ -105,64 +103,53 @@ class CompanyServiceTest {
     void shouldBlockActiveCompany() {
         // given
         mockClock();
-        when(companyRepository.findByNip(DEFAULT_NIP))
-                .thenReturn(Optional.of(companyMapper.toEntity(CompanyFixture.activeCompany())));
         when(companyRepository.save(any(CompanyEntity.class)))
                 .thenAnswer(i -> i.getArgument(0));
 
         // when
-        Company result = companyService.blockCompany(DEFAULT_NIP);
+        Company result = companyService.blockCompany(activeCompany());
 
         // then
         assertThat(result.isActive()).isFalse();
         assertThat(result.getBlockedAt()).isEqualTo(fixedDateTime());
-        verify(companyRepository).findByNip(DEFAULT_NIP);
         verify(companyRepository).save(any(CompanyEntity.class));
     }
 
     @Test
     void shouldThrowException_WhenBlockingAlreadyBlockedCompany() {
         // given
-        when(companyRepository.findByNip(DEFAULT_NIP))
-                .thenReturn(Optional.of(companyMapper.toEntity(CompanyFixture.blockedCompany())));
-
+        Company company = blockedCompany();
         // when & then
-        assertThatThrownBy(() -> companyService.blockCompany(DEFAULT_NIP))
+        assertThatThrownBy(() -> companyService.blockCompany(company))
                 .isInstanceOf(ResourceActiveException.class);
 
-        verify(companyRepository).findByNip(DEFAULT_NIP);
         verify(companyRepository, never()).save(any());
     }
 
     @Test
     void shouldActivateBlockedCompany() {
         // given
-        when(companyRepository.findByNip(DEFAULT_NIP))
-                .thenReturn(Optional.of(companyMapper.toEntity(CompanyFixture.blockedCompany())));
         when(companyRepository.save(any(CompanyEntity.class)))
                 .thenAnswer(i -> i.getArgument(0));
 
         // when
-        Company result = companyService.activateCompany(DEFAULT_NIP);
+        Company result = companyService.activateCompany(blockedCompany());
 
         // then
         assertThat(result.isActive()).isTrue();
         assertThat(result.getBlockedAt()).isNull();
-        verify(companyRepository).findByNip(DEFAULT_NIP);
         verify(companyRepository).save(any(CompanyEntity.class));
     }
 
     @Test
     void shouldThrowException_WhenActivatingAlreadyActiveCompany() {
         // given
-        when(companyRepository.findByNip(DEFAULT_NIP))
-                .thenReturn(Optional.of(companyMapper.toEntity(CompanyFixture.activeCompany())));
+        Company company = activeCompany();
 
-        // when & then
-        assertThatThrownBy(() -> companyService.activateCompany(DEFAULT_NIP))
+        //when, then
+        assertThatThrownBy(() -> companyService.activateCompany(company))
                 .isInstanceOf(ResourceActiveException.class);
 
-        verify(companyRepository).findByNip(DEFAULT_NIP);
         verify(companyRepository, never()).save(any());
     }
 

@@ -1,6 +1,6 @@
 package com.geo.survey.domain.service;
 
-import com.geo.survey.domain.exception.ResourceAlreadyExistsException;
+import com.geo.survey.domain.exception.BusinessRuleViolationException;
 import com.geo.survey.domain.exception.ResourceNotFoundException;
 import com.geo.survey.domain.model.Company;
 import com.geo.survey.infrastructure.database.entity.CompanyEntity;
@@ -27,16 +27,14 @@ public class CompanyService {
         return mapper.toDomain(savedEntity);
     }
 
-    public Company blockCompany(String nip) {
-        Company company = findByNip(nip);
+    public Company blockCompany(Company company) {
         Company blocked = company.block(clock);
         CompanyEntity entity = mapper.toEntity(blocked);
         CompanyEntity saved = companyRepository.save(entity);
         return mapper.toDomain(saved);
     }
 
-    public Company activateCompany(String nip) {
-        Company company = findByNip(nip);
+    public Company activateCompany(Company company) {
         Company activated = company.activate();
         CompanyEntity entity = mapper.toEntity(activated);
         CompanyEntity saved = companyRepository.save(entity);
@@ -61,7 +59,7 @@ public class CompanyService {
 
     private void validateNipUniqueness(String nip) {
         if (companyRepository.existsByNip(nip)) {
-            throw new ResourceAlreadyExistsException("Company with nip [%s] already exists".formatted(nip));
+            throw new BusinessRuleViolationException("Company with nip [%s] already exists".formatted(nip));
         }
     }
 }

@@ -2,7 +2,6 @@ package integration;
 
 import com.geo.survey.AppRunner;
 import com.geo.survey.domain.exception.BusinessRuleViolationException;
-import com.geo.survey.domain.exception.ResourceAlreadyExistsException;
 import com.geo.survey.domain.exception.ResourceNotFoundException;
 import com.geo.survey.domain.model.*;
 import com.geo.survey.domain.service.AccountManager;
@@ -118,7 +117,7 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
 
         //when then
         assertThatThrownBy(() -> accountManager.registerCompanyWithAdmin(company, DEFAULT_USER, DEFAULT_PASSWORD))
-                .isInstanceOf(ResourceAlreadyExistsException.class)
+                .isInstanceOf(BusinessRuleViolationException.class)
                 .hasMessageContaining(company.getNip());
     }
 
@@ -131,7 +130,7 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
 
         //when then
         assertThatThrownBy(() -> accountManager.registerCompanyWithAdmin(DEFAULT_COMPANY, admin, DEFAULT_PASSWORD))
-                .isInstanceOf(ResourceAlreadyExistsException.class)
+                .isInstanceOf(BusinessRuleViolationException.class)
                 .hasMessageContaining(admin.getEmail());
     }
 
@@ -186,13 +185,24 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
 
         //when then
         assertThatThrownBy(() -> accountManager.registerUser(companyId, user, DEFAULT_PASSWORD))
-                .isInstanceOf(ResourceAlreadyExistsException.class)
+                .isInstanceOf(BusinessRuleViolationException.class)
                 .hasMessageContaining(user.getEmail());
+    }
+
+    @Test
+    void shouldThrowException_WhenCompanyIsNotActive() {
+        //given
+        Long blockedCompanyId = 3L; // TerraMap — blocked from test_data_account.sql
+
+        //when then
+        assertThatThrownBy(() -> accountManager.registerUser(blockedCompanyId, DEFAULT_USER, DEFAULT_PASSWORD))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("Company is not active");
     }
 
     // tests for delete user
     @Test
-    void shouldSoftDeleteUser() {
+    void shouldSoftDeleteNonAdminUser() {
         // given
         String email = "anna.nowak@geosurvey.pl"; // SURVEYOR from test_data_account.sql
 
@@ -226,6 +236,27 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
                 .hasMessageContaining(nonExistentEmail);
     }
 
+    @Test
+    void shouldDeleteAdminUserWhenNotTheLastActiveAdmin() {
+        // given — add another admin first so we can delete one
+        Long companyId = 1L;
+        User secondAdmin = User.builder()
+                .email("second.admin@geosurvey.pl")
+                .name("Second")
+                .surname("Admin")
+                .role(Role.ADMIN)
+                .build();
+        accountManager.registerUser(companyId, secondAdmin, DEFAULT_PASSWORD);
+
+        // when
+        accountManager.deleteUser(secondAdmin.getEmail());
+
+        // then
+        User deleted = userService.findByEmail(secondAdmin.getEmail());
+        assertThat(deleted.isActive()).isFalse();
+        assertThat(deleted.getDeletedAt()).isNotNull();
+    }
+
     // tests for block and activate company
     @Test
     void shouldBlockActiveCompany() {
@@ -254,4 +285,49 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
         assertThat(activated.isActive()).isTrue();
         assertThat(activated.getBlockedAt()).isNull();
     }
+
+    @Test
+    void shouldThrowException_WhenBlockingAlreadyInactiveCompany() {
+        // given
+        String nip = "1122334455"; // TerraMap — already blocked from test_data_account.sql
+
+        // when then
+        assertThatThrownBy(() -> accountManager.blockCompany(nip))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("Company is already inactive");
+    }
+
+    @Test
+    void shouldThrowException_WhenActivatingAlreadyActiveCompany() {
+        // given
+        String nip = "1234567890"; // GeoSurvey — active from test_data_account.sql
+
+        // when then
+        assertThatThrownBy(() -> accountManager.activateCompany(nip))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("Company is already active");
+    }
+
+    @Test
+    void shouldThrowException_WhenBlockingNonExistentCompany() {
+        // given
+        String nonExistentNip = "9999999999";
+
+        // when then
+        assertThatThrownBy(() -> accountManager.blockCompany(nonExistentNip))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining(nonExistentNip);
+    }
+
+    @Test
+    void shouldThrowException_WhenActivatingNonExistentCompany() {
+        // given
+        String nonExistentNip = "9999999999";
+
+        // when then
+        assertThatThrownBy(() -> accountManager.activateCompany(nonExistentNip))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining(nonExistentNip);
+    }
+
 }
