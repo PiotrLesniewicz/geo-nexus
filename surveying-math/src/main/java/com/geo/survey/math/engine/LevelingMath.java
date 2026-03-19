@@ -15,8 +15,8 @@ final class LevelingMath {
     private static final double METER_TO_KILOMETER = 1000.0;
 
     static void validate(List<LevelingObservation> data) {
-        if (data.isEmpty()) {
-            throw new IllegalArgumentException("Raw data for leveling calculation cannot be empty");
+        if (data == null || data.isEmpty()) {
+            throw new IllegalArgumentException("Raw data for leveling calculation cannot be null or empty");
         }
     }
 
@@ -61,7 +61,7 @@ final class LevelingMath {
      */
     static double getAllowedMisclosure(List<LevelingObservation> data) {
         double sequenceDistance = getSequenceDistance(data);
-        if (sequenceDistance != 0) {
+        if (sequenceDistance > EPSILON) {
             return TOLERANCE_FACTOR_PER_KILOMETER * Math.sqrt(sequenceDistance);
         }
         int countStation = data.size();
