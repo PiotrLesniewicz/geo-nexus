@@ -5,6 +5,7 @@ import com.geo.survey.domain.model.*;
 import com.geo.survey.math.value.LevelingType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.InputStream;
 import java.time.OffsetDateTime;
@@ -18,6 +19,7 @@ public class JobSurveyManager {
     private final JobService jobService;
     private final LevelingService levelingService;
 
+    @Transactional
     public Job createJob(Job job, Long companyId, Long userId) {
         Company company = companyService.findById(companyId);
         if (!company.isActive()) {
@@ -30,6 +32,7 @@ public class JobSurveyManager {
         return jobService.create(job, company, user);
     }
 
+    @Transactional
     public LevelingReport processLevelingFile(
             Long jobId,
             Double startH,
