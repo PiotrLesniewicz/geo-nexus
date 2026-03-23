@@ -47,8 +47,8 @@ public class LevelingReportEntity {
     @Column(name = "allowed_misclosure" , nullable = false)
     private BigDecimal allowedMisclosure;
 
-    @Column(name = "is_within_tolerance" , nullable = false)
-    private boolean isWithinTolerance;
+    @Column(name = "tolerance_met" , nullable = false)
+    private boolean toleranceMet;
 
     @Column(name = "sequence_distance")
     private BigDecimal sequenceDistance;

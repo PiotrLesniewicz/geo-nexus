@@ -31,7 +31,7 @@ class OneWayLevelingTest {
         //when - then
         assertThatThrownBy(() -> oneWayLeveling.calculate(startH, endH, data))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Raw data for leveling calculation cannot be empty");
+                .hasMessage("Raw data for leveling calculation cannot be null or empty");
     }
 
     @Test
@@ -85,7 +85,7 @@ class OneWayLevelingTest {
 
         //then
         assertThat(result.misclosure()).isCloseTo(-0.0030, within(1e-6));
-        assertThat(result.withTolerance()).isTrue();
+        assertThat(result.toleranceMet()).isTrue();
     }
 
     @Test
@@ -98,7 +98,7 @@ class OneWayLevelingTest {
 
         //then
         assertThat(result.misclosure()).isCloseTo(-0.0020, within(1e-6));
-        assertThat(result.withTolerance()).isTrue();
+        assertThat(result.toleranceMet()).isTrue();
     }
 
     @Test
@@ -112,7 +112,7 @@ class OneWayLevelingTest {
 
         //then
         assertThat(result.misclosure()).isCloseTo(expected, within(1e-6));
-        assertThat(result.withTolerance()).isFalse();
+        assertThat(result.toleranceMet()).isFalse();
         assertThat(Math.abs(result.misclosure()))
                 .withFailMessage("Expected misclosure (%s) to be greater than allowed (%s)",
                         result.misclosure(), result.allowedMisclosure())

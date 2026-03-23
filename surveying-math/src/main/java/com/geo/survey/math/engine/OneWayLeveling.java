@@ -67,7 +67,7 @@ public class OneWayLeveling implements LevelingEngine {
                 .misclosure(misclosure)
                 .allowedMisclosure(allowedMisclosure)
                 .sequenceDistance(sequenceDistance)
-                .withTolerance(isWithinTolerance)
+                .toleranceMet(isWithinTolerance)
                 .build();
     }
 

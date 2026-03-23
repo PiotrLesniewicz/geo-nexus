@@ -43,7 +43,7 @@ public class OneWayDoubleLeveling implements LevelingEngine {
                 .misclosure(misclosure)
                 .allowedMisclosure(allowedMisclosure)
                 .sequenceDistance(sequenceDistance)
-                .withTolerance(isWithinTolerance)
+                .toleranceMet(isWithinTolerance)
                 .build();
     }
 
@@ -71,7 +71,7 @@ public class OneWayDoubleLeveling implements LevelingEngine {
                     .heightDiffSecond(hds)
                     .heightAvgDiff(hd)
                     .stationError(se)
-                    .isStationWithinTolerance(ste)
+                    .toleranceMet(ste)
                     .correction(correction)
                     .adjustedHeight(ah)
                     .build());

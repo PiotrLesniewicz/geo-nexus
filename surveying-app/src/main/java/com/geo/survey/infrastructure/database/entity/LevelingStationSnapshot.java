@@ -43,7 +43,7 @@ public class LevelingStationSnapshot {
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     BigDecimal stationError;
 
-    boolean withTolerance;
+    boolean toleranceMet;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     BigDecimal correction;

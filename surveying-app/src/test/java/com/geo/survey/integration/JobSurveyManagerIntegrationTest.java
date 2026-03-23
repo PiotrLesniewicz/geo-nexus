@@ -157,7 +157,7 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
         assertThat(firstStation.getForesightElev2()).isNotNull();
         assertThat(firstStation.getHeightDiffSecond()).isNotNull();
         assertThat(firstStation.getStationError()).isNotNull();
-        assertThat(firstStation.isWithTolerance()).isTrue();
+        assertThat(firstStation.isToleranceMet()).isTrue();
     }
 
     // add two report for one job

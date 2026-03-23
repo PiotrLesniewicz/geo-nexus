@@ -6,7 +6,7 @@ public record LevelingStationResult(
         Double heightDiffSecond,
         double heightAvgDiff,
         double stationError,
-        Boolean isStationWithinTolerance,
+        Boolean toleranceMet,
         double correction,
         double adjustedHeight
 ) {
@@ -21,7 +21,7 @@ public record LevelingStationResult(
         private Double heightDiffSecond;
         private double heightAvgDiff;
         private double stationError;
-        private Boolean isStationWithinTolerance;
+        private Boolean toleranceMet;
         private double correction;
         private double adjustedHeight;
 
@@ -50,8 +50,8 @@ public record LevelingStationResult(
             return this;
         }
 
-        public Builder isStationWithinTolerance(Boolean isStationWithinTolerance) {
-            this.isStationWithinTolerance = isStationWithinTolerance;
+        public Builder toleranceMet(Boolean toleranceMet) {
+            this.toleranceMet = toleranceMet;
             return this;
         }
 
@@ -72,7 +72,7 @@ public record LevelingStationResult(
                     heightDiffSecond,
                     heightAvgDiff,
                     stationError,
-                    isStationWithinTolerance,
+                    toleranceMet,
                     correction,
                     adjustedHeight
             );

@@ -123,7 +123,7 @@ class LevelingMathTest {
         //when - then
         Assertions.assertThatThrownBy(() -> LevelingMath.validate(data))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Raw data for leveling calculation cannot be empty");
+                .hasMessage("Raw data for leveling calculation cannot be null or empty");
     }
 
     @ParameterizedTest

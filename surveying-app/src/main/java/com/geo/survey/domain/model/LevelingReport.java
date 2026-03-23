@@ -23,7 +23,7 @@ public class LevelingReport {
     BigDecimal theoreticalDifference;
     BigDecimal misclosure;
     BigDecimal allowedMisclosure;
-    boolean isWithinTolerance;
+    boolean toleranceMet;
     BigDecimal sequenceDistance;
     OffsetDateTime observationTime;
     OffsetDateTime generatedAt;

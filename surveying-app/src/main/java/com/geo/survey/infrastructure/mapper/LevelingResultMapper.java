@@ -26,7 +26,7 @@ public class LevelingResultMapper {
                 .misclosure(toBigDecimal(result.misclosure()))
                 .allowedMisclosure(toBigDecimal(result.allowedMisclosure()))
                 .sequenceDistance(toBigDecimal(result.sequenceDistance()))
-                .isWithinTolerance(result.withTolerance())
+                .toleranceMet(result.toleranceMet())
                 .stations(toStations(result.stationResults()))
                 .build();
     }
@@ -53,7 +53,7 @@ public class LevelingResultMapper {
                 .heightDiffSecond(toBigDecimal(result.heightDiffSecond()))
                 .heightAvgDiff(toBigDecimal(result.heightAvgDiff()))
                 .stationError(toBigDecimal(result.stationError()))
-                .withTolerance(Boolean.TRUE.equals(result.isStationWithinTolerance()))
+                .toleranceMet(Boolean.TRUE.equals(result.toleranceMet()))
                 .correction(toBigDecimal(result.correction()))
                 .adjustedHeight(toBigDecimal(result.adjustedHeight()))
                 .build();

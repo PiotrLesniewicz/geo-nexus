@@ -91,7 +91,7 @@ CREATE TABLE leveling_report
     theoretical_difference NUMERIC(10,4) NOT NULL,
     misclosure             NUMERIC(10,4) NOT NULL,
     allowed_misclosure     NUMERIC(10,4) NOT NULL CHECK (allowed_misclosure >= 0),
-    is_within_tolerance    BOOLEAN NOT NULL,
+    tolerance_met          BOOLEAN NOT NULL,
     sequence_distance      NUMERIC(10,4) CHECK (sequence_distance >= 0),
     stations               JSONB NOT NULL,
     observation_time       TIMESTAMPTZ NOT NULL,
