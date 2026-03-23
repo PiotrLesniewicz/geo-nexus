@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.InputStream;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -47,5 +48,9 @@ public class JobSurveyManager {
             throw new BusinessRuleViolationException("Job is not open");
         }
         return levelingService.processFile(stream, startH, endH, filename, type, job, observationTime);
+    }
+
+    public List<LevelingReport> findReportForJobId(Long jobId) {
+        return levelingService.findReportsByJobId(jobId);
     }
 }

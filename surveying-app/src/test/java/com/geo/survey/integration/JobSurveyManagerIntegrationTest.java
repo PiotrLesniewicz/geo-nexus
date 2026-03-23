@@ -24,6 +24,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -157,6 +158,53 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
         assertThat(firstStation.getHeightDiffSecond()).isNotNull();
         assertThat(firstStation.getStationError()).isNotNull();
         assertThat(firstStation.isWithTolerance()).isTrue();
+    }
+
+    // add two report for one job
+
+    @Test
+    void shouldProcessTwoLevelingReports_forSameJob() {
+        // given
+        InputStream streamFirst = getStream("leveling/one_way_10stations.csv");
+        InputStream streamSecond = getStream("leveling/one_way_double_10stations.csv");
+        OffsetDateTime observationTime = OffsetDateTime.now(clock);
+
+        BigDecimal expectedMisclosureFirst = new BigDecimal("0.0020");
+        BigDecimal expectedMisclosureSecond = new BigDecimal("-0.0025");
+
+        // when
+        LevelingReport firstReport = jobSurveyManager.processLevelingFile(
+                JOB_ID, START_H, END_H, streamFirst, "one_way_10stations.csv",
+                LevelingType.ONE_WAY, observationTime);
+
+        LevelingReport secondReport = jobSurveyManager.processLevelingFile(
+                JOB_ID, START_H, END_H, streamSecond, "one_way_double_10stations.csv",
+                LevelingType.ONE_WAY_DOUBLE, observationTime);
+
+        // then
+        assertThat(firstReport.getId()).isNotNull();
+        assertThat(secondReport.getId()).isNotNull();
+        assertThat(firstReport.getId()).isNotEqualTo(secondReport.getId());
+
+
+        assertThat(firstReport.getJob().getId()).isEqualTo(JOB_ID);
+        assertThat(secondReport.getJob().getId()).isEqualTo(JOB_ID);
+
+
+        assertThat(firstReport.getLevelingType()).isEqualTo(LevelingType.ONE_WAY);
+        assertThat(firstReport.getMisclosure()).isEqualByComparingTo(expectedMisclosureFirst);
+        assertThat(firstReport.getStations()).hasSize(10);
+
+        assertThat(secondReport.getLevelingType()).isEqualTo(LevelingType.ONE_WAY_DOUBLE);
+        assertThat(secondReport.getMisclosure()).isEqualByComparingTo(expectedMisclosureSecond);
+        assertThat(secondReport.getStations()).hasSize(10);
+
+
+        assertThat(firstReport.getStations().getFirst().getBacksightElev2()).isNull();
+        assertThat(secondReport.getStations().getFirst().getBacksightElev2()).isNotNull();
+
+        List<LevelingReport> reportsForJob = jobSurveyManager.findReportForJobId(JOB_ID);
+        assertThat(reportsForJob).hasSize(2);
     }
 
     // createJob business rule validation tests

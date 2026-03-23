@@ -61,4 +61,11 @@ public class LevelingService {
                 .findFirst()
                 .orElseThrow(() -> new ParsingException("Unsupported file format: " + filename));
     }
+
+    public List<LevelingReport> findReportsByJobId(Long jobId) {
+        List<LevelingReportEntity> jobEntity = levelingReportRepository.findByJobId(jobId);
+        return jobEntity.stream()
+                .map(levelingReportMapper::toDomain)
+                .toList();
+    }
 }
