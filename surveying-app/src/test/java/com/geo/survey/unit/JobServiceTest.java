@@ -1,4 +1,4 @@
-package unit;
+package com.geo.survey.unit;
 
 import com.geo.survey.domain.exception.BusinessRuleViolationException;
 import com.geo.survey.domain.exception.ResourceNotFoundException;
@@ -10,10 +10,9 @@ import com.geo.survey.domain.service.JobService;
 import com.geo.survey.infrastructure.database.entity.JobEntity;
 import com.geo.survey.infrastructure.database.repository.JobRepository;
 import com.geo.survey.infrastructure.mapper.*;
-import data.CompanyFixture;
-import data.UserFixture;
+import com.geo.survey.testdata.CompanyFixture;
+import com.geo.survey.testdata.UserFixture;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -22,7 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Clock;
 import java.util.Optional;
 
-import static data.JobFixture.*;
+import static com.geo.survey.testdata.JobFixture.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -30,7 +29,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("JobService Unit Tests")
 class JobServiceTest {
 
     private JobService jobService;
@@ -70,10 +68,11 @@ class JobServiceTest {
     // create tests
 
     @Test
-    @DisplayName("Should correctly create job when job identifier does not exist")
     void shouldCorrectlyCreateJob_WhenJobIdentifierDoesNotExist() {
         // given
-        mockClock();
+        when(clock.instant()).thenReturn(FIXED_INSTANT);
+        when(clock.getZone()).thenReturn(java.time.ZoneOffset.UTC);
+
         Job jobToCreate = jobWithoutStatus();
         Company company = CompanyFixture.activeCompanyWithId();
         User user = UserFixture.activeUser();
@@ -151,11 +150,5 @@ class JobServiceTest {
         verify(jobRepository, never()).deleteById(anyLong());
     }
 
-    // helper methods
-
-    private void mockClock() {
-        when(clock.instant()).thenReturn(FIXED_INSTANT);
-        when(clock.getZone()).thenReturn(java.time.ZoneOffset.UTC);
-    }
 }
 

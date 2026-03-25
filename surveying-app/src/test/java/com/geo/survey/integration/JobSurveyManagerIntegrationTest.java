@@ -1,13 +1,13 @@
-package integration;
+package com.geo.survey.integration;
 
-import com.geo.survey.AppRunner;
+import com.geo.survey.domain.exception.BusinessRuleViolationException;
 import com.geo.survey.domain.model.Job;
 import com.geo.survey.domain.model.LevelingReport;
 import com.geo.survey.domain.model.LevelingStation;
 import com.geo.survey.domain.model.StatusJob;
 import com.geo.survey.domain.service.JobSurveyManager;
 import com.geo.survey.math.value.LevelingType;
-import configuration.TestContainerConfig;
+import com.geo.survey.testconfig.TestContainerConfig;
 import lombok.AllArgsConstructor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,12 +25,10 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
-import com.geo.survey.domain.exception.BusinessRuleViolationException;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest(classes = AppRunner.class)
+@SpringBootTest
 @ActiveProfiles("test")
 @AllArgsConstructor(onConstructor_ = @Autowired)
 @Sql(scripts = {"/db/cleanup.sql", "/db/test_data_leveling.sql"},

@@ -1,4 +1,4 @@
-package data;
+package com.geo.survey.testdata;
 
 import com.geo.survey.domain.model.Role;
 import com.geo.survey.domain.model.User;
@@ -24,31 +24,6 @@ public final class UserFixture {
                 .role(Role.SURVEYOR)
                 .active(true)
                 .registerAt(fixedDateTime())
-                .company(CompanyFixture.activeCompany())
-                .build();
-    }
-
-    public static User activeAdmin() {
-        return User.builder()
-                .email("admin@geo.com")
-                .name("Admin")
-                .surname("Kowalski")
-                .role(Role.ADMIN)
-                .active(true)
-                .registerAt(fixedDateTime())
-                .company(CompanyFixture.activeCompanyWithId())
-                .build();
-    }
-
-    public static User blockedUser() {
-        return User.builder()
-                .email(DEFAULT_EMAIL)
-                .name(DEFAULT_NAME)
-                .surname(DEFAULT_SURNAME)
-                .role(Role.SURVEYOR)
-                .active(false)
-                .registerAt(fixedDateTime())
-                .deletedAt(fixedDateTime())
                 .company(CompanyFixture.activeCompany())
                 .build();
     }

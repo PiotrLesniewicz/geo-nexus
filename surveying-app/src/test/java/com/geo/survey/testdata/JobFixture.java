@@ -1,4 +1,4 @@
-package data;
+package com.geo.survey.testdata;
 
 import com.geo.survey.domain.model.Address;
 import com.geo.survey.domain.model.Job;

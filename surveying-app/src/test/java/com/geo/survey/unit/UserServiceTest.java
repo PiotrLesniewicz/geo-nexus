@@ -1,4 +1,4 @@
-package unit;
+package com.geo.survey.unit;
 
 import com.geo.survey.domain.exception.*;
 import com.geo.survey.domain.model.Role;
@@ -18,7 +18,7 @@ import java.time.Clock;
 import java.time.ZoneOffset;
 import java.util.Optional;
 
-import static data.UserFixture.*;
+import static com.geo.survey.testdata.UserFixture.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,7 +44,9 @@ class UserServiceTest {
     @Test
     void shouldCorrectlySaveUser_WhenUserDoesNotExist() {
         // given
-        mockClock();
+        when(clock.instant()).thenReturn(FIXED_INSTANT);
+        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
+
         User user = userWithoutStatus();
 
         when(userRepository.existsByEmail(DEFAULT_EMAIL)).thenReturn(false);
@@ -124,10 +126,5 @@ class UserServiceTest {
 
         verify(userRepository).findByEmail(DEFAULT_EMAIL);
         verify(userRepository, never()).save(any());
-    }
-
-    private void mockClock() {
-        when(clock.instant()).thenReturn(FIXED_INSTANT);
-        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
     }
 }

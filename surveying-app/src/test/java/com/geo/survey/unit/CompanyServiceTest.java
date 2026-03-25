@@ -1,4 +1,4 @@
-package unit;
+package com.geo.survey.unit;
 
 import com.geo.survey.domain.exception.BusinessRuleViolationException;
 import com.geo.survey.domain.exception.ResourceNotFoundException;
@@ -20,7 +20,7 @@ import java.time.Clock;
 import java.time.ZoneOffset;
 import java.util.Optional;
 
-import static data.CompanyFixture.*;
+import static com.geo.survey.testdata.CompanyFixture.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;

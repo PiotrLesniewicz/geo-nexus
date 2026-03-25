@@ -1,4 +1,4 @@
-package unit;
+package com.geo.survey.unit;
 
 import com.geo.survey.domain.exception.ValidationDataException;
 import com.geo.survey.domain.service.ValidationService;

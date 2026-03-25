@@ -1,4 +1,4 @@
-package unit.parser;
+package com.geo.survey.unit.parser;
 
 import com.geo.survey.domain.exception.ParsingException;
 import com.geo.survey.infrastructure.parser.TxtLevelingFileParser;
@@ -34,7 +34,7 @@ class TxtLevelingFileParserTest {
 
     @Test
     void supports_shouldReturnFalse_whenNoExtension() {
-        assertThat(parser.supports("data")).isFalse();
+        assertThat(parser.supports("com/geo/survey/testdata")).isFalse();
     }
 
     // parse() - happy path

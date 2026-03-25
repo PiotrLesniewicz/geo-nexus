@@ -1,4 +1,4 @@
-package unit;
+package com.geo.survey.unit;
 
 import com.geo.survey.domain.exception.ResourceNotFoundException;
 import com.geo.survey.domain.model.User;
@@ -17,10 +17,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
 
+import static com.geo.survey.testdata.UserFixture.FIXED_INSTANT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
@@ -36,8 +36,6 @@ class UserAuthServiceTest {
     @Mock
     private Clock clock;
 
-    private static final Instant FIXED_INSTANT = Instant.parse("2020-10-03T12:00:00Z");
-
     @BeforeEach
     void setUp() {
         UserAuthMapper userAuthMapper = new UserAuthMapperImpl();
@@ -48,7 +46,8 @@ class UserAuthServiceTest {
     @Test
     void shouldSaveUserAuthWithHashedPassword() {
         // given
-        mockClock();
+        when(clock.instant()).thenReturn(FIXED_INSTANT);
+        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
         User user = User.builder().id(1L).email("test@test.pl").build();
         String rawPassword = "tajnehaslo";
 
@@ -75,8 +74,4 @@ class UserAuthServiceTest {
                 .hasMessageContaining(String.valueOf(userId));
     }
 
-    private void mockClock() {
-        when(clock.instant()).thenReturn(FIXED_INSTANT);
-        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
-    }
 }

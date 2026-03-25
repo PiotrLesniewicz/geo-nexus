@@ -1,4 +1,4 @@
-package configuration;
+package com.geo.survey.testconfig;
 
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
