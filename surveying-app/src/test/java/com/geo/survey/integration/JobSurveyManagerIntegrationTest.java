@@ -14,10 +14,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -32,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 @ActiveProfiles("test")
 @AllArgsConstructor(onConstructor_ = @Autowired)
-@Sql(scripts = {"/db/cleanup.sql", "/db/test_data_leveling.sql"},
+@Sql(scripts = {"/db/cleanup.sql", "/db/test_data_job_leveling.sql"},
         executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class JobSurveyManagerIntegrationTest extends TestContainerConfig {
 
@@ -41,7 +44,7 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
     @MockitoBean
     private Clock clock;
 
-    private static final Long JOB_ID = 1L;           // from test_data_leveling.sql
+    private static final String JOB_IDENTIFIER = "JOB-2024-001";   // from test_data_job_leveling.sql
     private static final Double START_H = 100.000;
     private static final Double END_H = 100.500;
 
@@ -57,8 +60,8 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
     @Test
     void shouldCreateJob_withCompanyAndUser() {
         // given
-        Long companyId = 1L; // from test_data_leveling.sql
-        Long userId = 1L;    // from test_data_leveling.sql
+        Long companyId = 1L; // from test_data_job_leveling.sql
+        Long userId = 1L;    // from test_data_job_leveling.sql
 
         Job job = Job.builder()
                 .jobIdentifier("JOB-2024-NEW")
@@ -80,16 +83,17 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
     // ONE_WAY leveling tests
 
     @Test
-    void shouldProcessOneWayLevelingFile_andSaveReportToDatabase() {
+    void shouldProcessOneWayLevelingFile_andSaveReportToDatabase() throws IOException {
         // given
         InputStream stream = getStream("leveling/one_way_10stations.csv");
+        MultipartFile uploadFile = new MockMultipartFile("file", "one_way_10stations.csv", null, stream);
         OffsetDateTime observationTime = OffsetDateTime.now(clock);
         BigDecimal expectedMisclosure = new BigDecimal("0.0020"); // calculated manually
         BigDecimal expectedSequenceDistance = new BigDecimal("0.4860");
 
         // when
         LevelingReport result = jobSurveyManager.processLevelingFile(
-                JOB_ID, START_H, END_H, stream, "one_way_10stations.csv",
+                JOB_IDENTIFIER, START_H, END_H, uploadFile,
                 LevelingType.ONE_WAY, observationTime);
 
         // then
@@ -98,7 +102,7 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
         assertThat(result.getMisclosure()).isEqualByComparingTo(expectedMisclosure);
         assertThat(result.getSequenceDistance()).isEqualByComparingTo(expectedSequenceDistance);
 
-        assertThat(result.getJob().getId()).isEqualTo(JOB_ID);
+        assertThat(result.getJob().getJobIdentifier()).isEqualTo(JOB_IDENTIFIER);
         assertThat(result.getStations())
                 .isNotNull()
                 .hasSize(10);
@@ -111,13 +115,14 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
     }
 
     @Test
-    void shouldProcessOneWayLevelingFile_withoutStartAndEndH() {
+    void shouldProcessOneWayLevelingFile_withoutStartAndEndH() throws IOException {
         InputStream stream = getStream("leveling/one_way_10stations.csv");
+        MultipartFile uploadFile = new MockMultipartFile("file", "one_way_10stations.csv", null, stream);
         OffsetDateTime observationTime = OffsetDateTime.now(clock);
 
         // when
         LevelingReport result = jobSurveyManager.processLevelingFile(
-                JOB_ID, null, null, stream, "one_way_10stations.csv",
+                JOB_IDENTIFIER, null, null, uploadFile,
                 LevelingType.ONE_WAY, observationTime);
 
         // then
@@ -130,16 +135,17 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
     // ONE_WAY_DOUBLE leveling tests
 
     @Test
-    void shouldProcessOneWayDoubleLevelingFile_andSaveReportToDatabase() {
+    void shouldProcessOneWayDoubleLevelingFile_andSaveReportToDatabase() throws IOException {
         // given
         InputStream stream = getStream("leveling/one_way_double_10stations.csv");
+        MultipartFile uploadFile = new MockMultipartFile("file", "one_way_double_10stations.csv", null, stream);
         OffsetDateTime observationTime = OffsetDateTime.now(clock);
         BigDecimal expectedMisclosure = new BigDecimal("-0.0025"); // calculated manually
         BigDecimal expectedSequenceDistance = new BigDecimal("0.4860");
 
         // when
         LevelingReport result = jobSurveyManager.processLevelingFile(
-                JOB_ID, START_H, END_H, stream, "one_way_double_10stations.csv",
+                JOB_IDENTIFIER, START_H, END_H, uploadFile,
                 LevelingType.ONE_WAY_DOUBLE, observationTime);
 
         // then
@@ -163,10 +169,12 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
     // add two report for one job
 
     @Test
-    void shouldProcessTwoLevelingReports_forSameJob() {
+    void shouldProcessTwoLevelingReports_forSameJob() throws IOException {
         // given
         InputStream streamFirst = getStream("leveling/one_way_10stations.csv");
         InputStream streamSecond = getStream("leveling/one_way_double_10stations.csv");
+        MultipartFile uploadFileFirst = new MockMultipartFile("file", "one_way_10stations.csv", null, streamFirst);
+        MultipartFile uploadFileSecond = new MockMultipartFile("file", "one_way_double_10stations.csv", null, streamSecond);
         OffsetDateTime observationTime = OffsetDateTime.now(clock);
 
         BigDecimal expectedMisclosureFirst = new BigDecimal("0.0020");
@@ -174,11 +182,11 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
 
         // when
         LevelingReport firstReport = jobSurveyManager.processLevelingFile(
-                JOB_ID, START_H, END_H, streamFirst, "one_way_10stations.csv",
+                JOB_IDENTIFIER, START_H, END_H, uploadFileFirst,
                 LevelingType.ONE_WAY, observationTime);
 
         LevelingReport secondReport = jobSurveyManager.processLevelingFile(
-                JOB_ID, START_H, END_H, streamSecond, "one_way_double_10stations.csv",
+                JOB_IDENTIFIER, START_H, END_H, uploadFileSecond,
                 LevelingType.ONE_WAY_DOUBLE, observationTime);
 
         // then
@@ -187,8 +195,8 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
         assertThat(firstReport.getId()).isNotEqualTo(secondReport.getId());
 
 
-        assertThat(firstReport.getJob().getId()).isEqualTo(JOB_ID);
-        assertThat(secondReport.getJob().getId()).isEqualTo(JOB_ID);
+        assertThat(firstReport.getJob().getJobIdentifier()).isEqualTo(JOB_IDENTIFIER);
+        assertThat(secondReport.getJob().getJobIdentifier()).isEqualTo(JOB_IDENTIFIER);
 
 
         assertThat(firstReport.getLevelingType()).isEqualTo(LevelingType.ONE_WAY);
@@ -203,7 +211,7 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
         assertThat(firstReport.getStations().getFirst().getBacksightElev2()).isNull();
         assertThat(secondReport.getStations().getFirst().getBacksightElev2()).isNotNull();
 
-        List<LevelingReport> reportsForJob = jobSurveyManager.findReportForJobId(JOB_ID);
+        List<LevelingReport> reportsForJob = jobSurveyManager.findLevelingReports(JOB_IDENTIFIER);
         assertThat(reportsForJob).hasSize(2);
     }
 
@@ -212,7 +220,7 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
     @Test
     void shouldThrowException_WhenCreatingJobWithInactiveCompany() {
         // given
-        Long inactiveCompanyId = 3L; // TerraMap Biuro Geodezji - active = FALSE from test_data_leveling.sql
+        Long inactiveCompanyId = 3L; // TerraMap Biuro Geodezji - active = FALSE from test_data_job_leveling.sql
         Long userId = 1L;
 
         Job job = Job.builder()
@@ -230,7 +238,7 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
     void shouldThrowException_WhenCreatingJobWithInactiveUser() {
         // given
         Long companyId = 1L;
-        Long inactiveUserId = 3L; // piotr.wisniewski@geodeta.pl - active = FALSE from test_data_leveling.sql
+        Long inactiveUserId = 3L; // piotr.wisniewski@geodeta.pl - active = FALSE from test_data_job_leveling.sql
 
         Job job = Job.builder()
                 .jobIdentifier("JOB-2024-INACTIVE-USER")
@@ -246,15 +254,16 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
     // processLevelingFile business rule validation tests
 
     @Test
-    void shouldThrowException_WhenProcessingLevelingFileForClosedJob() {
+    void shouldThrowException_WhenProcessingLevelingFileForClosedJob() throws IOException {
         // given
-        Long closedJobId = 3L; // closed job from test_data_leveling.sql
+        String closedJobIdentifier = "JOB-2024-CLOSED"; // closed job from test_data_job_leveling.sql
         InputStream stream = getStream("leveling/one_way_10stations.csv");
+        MultipartFile uploadFile = new MockMultipartFile("one_way_10stations.csv", stream);
         OffsetDateTime observationTime = OffsetDateTime.now(clock);
 
         // when & then
         assertThatThrownBy(() -> jobSurveyManager.processLevelingFile(
-                closedJobId, START_H, END_H, stream, "one_way_10stations.csv",
+                closedJobIdentifier, START_H, END_H, uploadFile,
                 LevelingType.ONE_WAY, observationTime))
                 .isInstanceOf(BusinessRuleViolationException.class)
                 .hasMessageContaining("Job is not open");

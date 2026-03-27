@@ -32,12 +32,12 @@ public class LevelingService {
     private final Clock clock;
 
     public LevelingReport processFile(
-            InputStream stream,
+            Job job,
             Double startH,
             Double endH,
+            InputStream stream,
             String filename,
             LevelingType type,
-            Job job,
             OffsetDateTime observationTime
     ) {
         List<LevelingObservation> observations = getParser(filename).parse(stream, filename);
@@ -62,8 +62,8 @@ public class LevelingService {
                 .orElseThrow(() -> new ParsingException("Unsupported file format: " + filename));
     }
 
-    public List<LevelingReport> findReportsByJobId(Long jobId) {
-        List<LevelingReportEntity> jobEntity = levelingReportRepository.findByJobId(jobId);
+    public List<LevelingReport> findLevelingReports(String jobIdentifier) {
+        List<LevelingReportEntity> jobEntity = levelingReportRepository.findByJobIdentifier(jobIdentifier);
         return jobEntity.stream()
                 .map(levelingReportMapper::toDomain)
                 .toList();

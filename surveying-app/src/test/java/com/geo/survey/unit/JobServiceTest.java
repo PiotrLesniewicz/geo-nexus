@@ -50,19 +50,19 @@ class JobServiceTest {
     // get by id tests
 
     @Test
-    void shouldThrowException_WhenJobNotFoundById() {
+    void shouldThrowException_WhenJobNotFoundByJobIdentifier() {
         // given
-        Long jobId = 999L;
+        String jobIdentifier = "JOB.2025.10";
 
-        when(jobRepository.findById(jobId)).thenReturn(Optional.empty());
+        when(jobRepository.findByJobIdentifier(jobIdentifier)).thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> jobService.getById(jobId))
+        assertThatThrownBy(() -> jobService.getByJobIdentifier(jobIdentifier))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Job not found")
-                .hasMessageContaining(jobId.toString());
+                .hasMessageContaining(jobIdentifier);
 
-        verify(jobRepository).findById(jobId);
+        verify(jobRepository).findByJobIdentifier(jobIdentifier);
     }
 
     // create tests

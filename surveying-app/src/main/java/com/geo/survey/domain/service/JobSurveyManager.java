@@ -1,12 +1,15 @@
 package com.geo.survey.domain.service;
 
 import com.geo.survey.domain.exception.BusinessRuleViolationException;
+import com.geo.survey.domain.exception.ParsingException;
 import com.geo.survey.domain.model.*;
 import com.geo.survey.math.value.LevelingType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -35,22 +38,29 @@ public class JobSurveyManager {
 
     @Transactional
     public LevelingReport processLevelingFile(
-            Long jobId,
+            String jobIdentifier,
             Double startH,
             Double endH,
-            InputStream stream,
-            String filename,
+            MultipartFile file,
             LevelingType type,
             OffsetDateTime observationTime
     ) {
-        Job job = jobService.getById(jobId);
+        Job job = jobService.getByJobIdentifier(jobIdentifier);
         if (job.getStatus() != StatusJob.OPEN) {
             throw new BusinessRuleViolationException("Job is not open");
         }
-        return levelingService.processFile(stream, startH, endH, filename, type, job, observationTime);
+        try (InputStream stream = file.getInputStream()) {
+            return levelingService.processFile(job, startH, endH, stream, file.getOriginalFilename(), type, observationTime);
+        } catch (IOException e) {
+            throw new ParsingException("Failed to read file: [%s], [%s]".formatted(file.getOriginalFilename(), e));
+        }
     }
 
-    public List<LevelingReport> findReportForJobId(Long jobId) {
-        return levelingService.findReportsByJobId(jobId);
+    public Job findJobByIdentifier(String jobIdentifier) {
+        return jobService.getByJobIdentifier(jobIdentifier);
+    }
+
+    public List<LevelingReport> findLevelingReports(String jobIdentifier) {
+        return levelingService.findLevelingReports(jobIdentifier);
     }
 }

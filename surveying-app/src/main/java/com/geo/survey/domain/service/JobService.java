@@ -22,27 +22,6 @@ public class JobService {
     private final JobMapper jobMapper;
     private final Clock clock;
 
-    public Job getById(Long id) {
-        return jobRepository.findById(id)
-                .map(jobMapper::toDomain)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Job not found with id: [%d]".formatted(id)));
-    }
-
-    public List<Job> getAllByCompany(Long companyId) {
-        return jobRepository.findAllByCompany_Id(companyId)
-                .stream()
-                .map(jobMapper::toDomain)
-                .toList();
-    }
-
-    public List<Job> getAllByUser(Long userId) {
-        return jobRepository.findAllByUser_Id(userId)
-                .stream()
-                .map(jobMapper::toDomain)
-                .toList();
-    }
-
     public Job create(Job job, Company company, User user) {
         if (jobRepository.existsByJobIdentifier(job.getJobIdentifier())) {
             throw new BusinessRuleViolationException(
@@ -51,6 +30,27 @@ public class JobService {
         Job toSave = Job.create(job, company, user, clock);
         JobEntity entity = jobMapper.toEntity(toSave);
         return jobMapper.toDomain(jobRepository.save(entity));
+    }
+
+    public Job getByJobIdentifier(String jobIdentifier) {
+        return jobRepository.findByJobIdentifier(jobIdentifier)
+                .map(jobMapper::toDomain)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Job not found with jobIdentifier: [" + jobIdentifier + "]"));
+    }
+
+    public List<Job> getAllByCompany(Long companyId) {
+        return jobRepository.findAllByCompanyId(companyId)
+                .stream()
+                .map(jobMapper::toDomain)
+                .toList();
+    }
+
+    public List<Job> getAllByUser(Long userId) {
+        return jobRepository.findAllByUserId(userId)
+                .stream()
+                .map(jobMapper::toDomain)
+                .toList();
     }
 
     public void delete(Long id) {
