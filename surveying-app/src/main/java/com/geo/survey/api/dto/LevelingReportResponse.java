@@ -18,6 +18,6 @@ public record LevelingReportResponse(
         BigDecimal sequenceDistance,
         OffsetDateTime observationTime,
         OffsetDateTime generatedAt,
-        Long jobId,
+        String jobIdentifier,
         List<LevelingStationResponse> stations
 ) {}
