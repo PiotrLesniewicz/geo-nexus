@@ -18,5 +18,5 @@ VALUES ('GeoSurvey Sp. z o.o.', '1234567890', 'ul. Miernicza', '12', '00-001', '
 INSERT INTO user_account (company_id, email, name, surname, role, active, register_at, deleted_at)
 VALUES (1, 'jan.kowalski@geosurvey.pl', 'Jan', 'Kowalski', 'ADMIN', TRUE, '2020-02-01T08:00:00Z', NULL),
        (1, 'anna.nowak@geosurvey.pl', 'Anna', 'Nowak', 'SURVEYOR', TRUE, '2020-02-05T08:00:00Z', NULL),
-       (2, 'piotr.wisniewski@geodeta.pl', 'Piotr', 'Wiśniewski', 'TECHNIC', FALSE, '2021-04-01T10:00:00Z', NULL),
+       (2, 'piotr.wisniewski@geodeta.pl', 'Piotr', 'Wiśniewski', 'SURVEYOR', FALSE, '2021-04-01T10:00:00Z', NULL),
        (3, 'ula.zawada@geodeta.pl', 'Ula', 'Zawada', 'ADMIN', FALSE, '2021-04-01T10:00:00Z', '2023-10-20T12:00:00Z');

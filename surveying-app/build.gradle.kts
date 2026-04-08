@@ -5,6 +5,7 @@ plugins {
 
 val mapstructVersion: String by project
 val lombokBindingVersion: String by project
+val jsonWebTokenVersion: String by project
 
 configurations {
     compileOnly {
@@ -24,6 +25,7 @@ dependencies {
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("org.mapstruct:mapstruct:$mapstructVersion")
+    implementation("io.jsonwebtoken:jjwt-api:$jsonWebTokenVersion")
 
     // 3. Compile Only (Lombok)
     compileOnly("org.projectlombok:lombok")
@@ -31,6 +33,8 @@ dependencies {
 
     // 4. Runtime Only
     runtimeOnly("org.postgresql:postgresql")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:$jsonWebTokenVersion")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jsonWebTokenVersion")
 
     // 5. Annotation Processors (Grouped together)
     annotationProcessor("org.projectlombok:lombok")

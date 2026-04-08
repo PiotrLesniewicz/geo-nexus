@@ -1,8 +1,9 @@
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5433/geo-nexus
-    username: postgres
-    password: postgres
+    username: postgres # demo username - in production, use environment variables or a secrets manager
+    password: postgres # demo password - in production, use environment variables or a secrets manager
   flyway:
     enabled: true
     baseline-on-migrate: true
@@ -15,3 +16,6 @@ spring:
       hibernate:
         format_sql: true
         show_sql: false
+jwt:
+  secret: nomGGs+0rW7wJqj9VzUvlBkY4LskO+sl3GqroKmhDuo # demo secret key - in production, use environment variables or a secrets manager
+  expiration: 86400000 # 1 day in milliseconds
