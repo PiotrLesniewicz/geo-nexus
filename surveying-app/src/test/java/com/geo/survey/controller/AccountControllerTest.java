@@ -9,25 +9,32 @@ import com.geo.survey.domain.exception.BusinessRuleViolationException;
 import com.geo.survey.domain.exception.ResourceNotFoundException;
 import com.geo.survey.domain.model.Role;
 import com.geo.survey.domain.service.AccountManager;
+import com.geo.survey.infrastructure.security.CustomUserDetails;
+import com.geo.survey.infrastructure.security.CustomUserDetailsService;
+import com.geo.survey.infrastructure.security.JwtService;
+import com.geo.survey.testconfig.SecurityTestConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = {AccountController.class})
-@Import(AccountApiMapperImpl.class)
-@AutoConfigureMockMvc(addFilters = false)
+@Import({
+        AccountApiMapperImpl.class,
+        SecurityTestConfiguration.class
+})
 class AccountControllerTest {
 
     @Autowired
@@ -38,6 +45,12 @@ class AccountControllerTest {
 
     @MockitoBean
     private AccountManager accountManager;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
+
+    @MockitoBean
+    private JwtService jwtService;
 
     // registerCompanyWithAdmin
 
@@ -54,7 +67,7 @@ class AccountControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
 
-        verify(accountManager).registerCompanyWithAdmin(any(), any(), eq("tajnehaslo"));
+        verify(accountManager).registerCompanyWithAdmin(any(), any(), any());
     }
 
     @Test
@@ -62,7 +75,7 @@ class AccountControllerTest {
         // given
         RegisterCompanyRequest request = getRegisterCompanyRequest();
 
-        doThrow(new BusinessRuleViolationException("Company with nip [1234567890] already exists"))
+        doThrow(new BusinessRuleViolationException("Company with nip already exists"))
                 .when(accountManager).registerCompanyWithAdmin(any(), any(), any());
 
         // when, then
@@ -77,35 +90,34 @@ class AccountControllerTest {
     @Test
     void shouldReturn201_whenRegisterUser() throws Exception {
         // given
-        Long companyId = 1L;
-        RegisterUserRequest request = new RegisterUserRequest(
-                "anna@geo.pl", "Anna", "Nowak", Role.SURVEYOR, "haslo123"
-        );
+        CustomUserDetails userDetails = getAdminUserDetails();
+        RegisterUserRequest request = newRegisterUser();
 
-        doNothing().when(accountManager).registerUser(eq(companyId), any(), any());
+        doNothing().when(accountManager).registerUser(any(), any(), any());
 
         // when, then
-        mockMvc.perform(post("/api/v1/companies/{companyId}/users", companyId)
+        mockMvc.perform(post("/api/v1/companies/users")
+                        .with(user(userDetails))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
 
-        verify(accountManager).registerUser(eq(companyId), any(), eq("haslo123"));
+        verify(accountManager).registerUser(any(), any(), any());
     }
 
     @Test
     void shouldReturn404_whenRegisterUserToNonExistentCompany() throws Exception {
         // given
-        Long companyId = 999L;
-        RegisterUserRequest request = new RegisterUserRequest(
-                "anna@geo.pl", "Anna", "Nowak", Role.SURVEYOR, "haslo123"
-        );
+        CustomUserDetails userDetails = getAdminUserDetails();
+        RegisterUserRequest request = newRegisterUser();
+        Long companyId = userDetails.getCompanyId();
 
-        doThrow(new ResourceNotFoundException("Company with companyId [999] does not exist"))
+        doThrow(new ResourceNotFoundException("Company with companyId [%s] does not exist".formatted(companyId)))
                 .when(accountManager).registerUser(eq(companyId), any(), any());
 
         // when, then
-        mockMvc.perform(post("/api/v1/companies/{companyId}/users", companyId)
+        mockMvc.perform(post("/api/v1/companies/users")
+                        .with(user(userDetails))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -114,16 +126,15 @@ class AccountControllerTest {
     @Test
     void shouldReturn409_whenRegisterUserToInactiveCompany() throws Exception {
         // given
-        Long companyId = 3L;
-        RegisterUserRequest request = new RegisterUserRequest(
-                "anna@geo.pl", "Anna", "Nowak", Role.SURVEYOR, "haslo123"
-        );
+        CustomUserDetails userDetails = getAdminUserDetails();
+        RegisterUserRequest request = newRegisterUser();
 
         doThrow(new BusinessRuleViolationException("Company is not active"))
-                .when(accountManager).registerUser(eq(companyId), any(), any());
+                .when(accountManager).registerUser(any(), any(), any());
 
         // when, then
-        mockMvc.perform(post("/api/v1/companies/{companyId}/users", companyId)
+        mockMvc.perform(post("/api/v1/companies/users")
+                        .with(user(userDetails))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
@@ -134,43 +145,50 @@ class AccountControllerTest {
     @Test
     void shouldReturn204_whenDeleteUser() throws Exception {
         // given
+        CustomUserDetails userDetails = getAdminUserDetails();
         String email = "anna@geo.pl";
-        doNothing().when(accountManager).deleteUser(email);
+        doNothing().when(accountManager).deleteUser(userDetails.getCompanyId(), email);
 
         // when, then
-        mockMvc.perform(delete("/api/v1/companies/users/{email}", email))
+        mockMvc.perform(delete("/api/v1/companies/users/{email}", email)
+                        .with(user(userDetails)))
                 .andExpect(status().isNoContent());
 
-        verify(accountManager).deleteUser(email);
+        verify(accountManager).deleteUser(userDetails.getCompanyId(), email);
     }
 
     @Test
     void shouldReturn404_whenDeleteNonExistentUser() throws Exception {
         // given
+        CustomUserDetails userDetails = getAdminUserDetails();
         String email = "nobody@nowhere.com";
-        doThrow(new ResourceNotFoundException("User with email [nobody@nowhere.com] does not exist"))
-                .when(accountManager).deleteUser(email);
+        doThrow(new ResourceNotFoundException("User with email [%s] does not exist".formatted(email)))
+                .when(accountManager).deleteUser(any(), eq(email));
 
         // when, then
-        mockMvc.perform(delete("/api/v1/companies/users/{email}", email))
+        mockMvc.perform(delete("/api/v1/companies/users/{email}", email)
+                        .with(user(userDetails)))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void shouldReturn409_whenDeletingLastActiveAdmin() throws Exception {
         // given
+        CustomUserDetails userDetails = getAdminUserDetails();
         String email = "jan@geo.pl";
         doThrow(new BusinessRuleViolationException("Cannot delete the last active admin of the company"))
-                .when(accountManager).deleteUser(email);
+                .when(accountManager).deleteUser(any(), any());
 
         // when, then
-        mockMvc.perform(delete("/api/v1/companies/users/{email}", email))
+        mockMvc.perform(delete("/api/v1/companies/users/{email}", email)
+                        .with(user(userDetails)))
                 .andExpect(status().isConflict());
     }
 
     // blockCompany
 
     @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
     void shouldReturn204_whenBlockCompany() throws Exception {
         // given
         String nip = "1234567890";
@@ -184,6 +202,7 @@ class AccountControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
     void shouldReturn409_whenBlockingAlreadyInactiveCompany() throws Exception {
         // given
         String nip = "1234567890";
@@ -198,6 +217,7 @@ class AccountControllerTest {
     // activateCompany
 
     @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
     void shouldReturn204_whenActivateCompany() throws Exception {
         // given
         String nip = "1122334455";
@@ -211,6 +231,7 @@ class AccountControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
     void shouldReturn409_whenActivatingAlreadyActiveCompany() throws Exception {
         // given
         String nip = "1234567890";
@@ -220,6 +241,27 @@ class AccountControllerTest {
         // when, then
         mockMvc.perform(patch("/api/v1/companies/{nip}/activate", nip))
                 .andExpect(status().isConflict());
+    }
+
+    // helpers
+
+    private static @NotNull CustomUserDetails getAdminUserDetails() {
+        return new CustomUserDetails(
+                1L,
+                1L,
+                "admin",
+                "password",
+                Role.ADMIN,
+                true,
+                true,
+                false
+        );
+    }
+
+    private static @NotNull RegisterUserRequest newRegisterUser() {
+        return new RegisterUserRequest(
+                "anna@geo.pl", "Anna", "Nowak", Role.SURVEYOR, "haslo123"
+        );
     }
 
 

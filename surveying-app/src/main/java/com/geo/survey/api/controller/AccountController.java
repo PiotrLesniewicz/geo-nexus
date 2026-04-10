@@ -6,9 +6,13 @@ import com.geo.survey.api.mapper.AccountApiMapper;
 import com.geo.survey.domain.model.Company;
 import com.geo.survey.domain.model.User;
 import com.geo.survey.domain.service.AccountManager;
+import com.geo.survey.infrastructure.security.CustomUserDetails;
+import com.geo.survey.infrastructure.security.annotation.IsAdmin;
+import com.geo.survey.infrastructure.security.annotation.IsSuperAdmin;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,27 +31,33 @@ public class AccountController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PostMapping("/{companyId}/users")
+    @IsAdmin
+    @PostMapping("/users")
     public ResponseEntity<Void> registerUser(
-            @PathVariable Long companyId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody RegisterUserRequest request) {
         User user = mapper.toUser(request);
-        accountManager.registerUser(companyId, user, request.password());
+        accountManager.registerUser(userDetails.getCompanyId(), user, request.password());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    @IsAdmin
     @DeleteMapping("/users/{email}")
-    public ResponseEntity<Void> deleteUser(@PathVariable String email) {
-        accountManager.deleteUser(email);
+    public ResponseEntity<Void> deleteUser(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable String email) {
+        accountManager.deleteUser(userDetails.getCompanyId(), email);
         return ResponseEntity.noContent().build();
     }
 
+    @IsSuperAdmin
     @PatchMapping("/{nip}/block")
     public ResponseEntity<Void> blockCompany(@PathVariable String nip) {
         accountManager.blockCompany(nip);
         return ResponseEntity.noContent().build();
     }
 
+    @IsSuperAdmin
     @PatchMapping("/{nip}/activate")
     public ResponseEntity<Void> activateCompany(@PathVariable String nip) {
         accountManager.activateCompany(nip);

@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 @ActiveProfiles("test")
 @AllArgsConstructor(onConstructor_ = @Autowired)
-@Sql(scripts = {"/db/cleanup.sql", "/db/test_data_account.sql"},
+@Sql(scripts = {"/db/migration/cleanup.sql", "/db/migration/test_data_account.sql"},
         executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class AccountManagerIntegrationTest extends TestContainerConfig {
 
@@ -140,7 +140,7 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
         Long companyId = 1L; // from test_data_account.sql
 
         User user = DEFAULT_USER.toBuilder()
-                .role(Role.TECHNIC)
+                .role(Role.SURVEYOR)
                 .build();
 
         //when
@@ -153,7 +153,7 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
         assertThat(savedUser.getId()).isNotNull();
         assertThat(savedUser)
                 .returns(user.getEmail(), User::getEmail)
-                .returns(Role.TECHNIC, User::getRole)
+                .returns(Role.SURVEYOR, User::getRole)
                 .returns(true, User::isActive)
                 .returns(OffsetDateTime.now(clock), User::getRegisterAt)
                 .returns(companyId, u -> u.getCompany().getId());
@@ -204,9 +204,9 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
     void shouldSoftDeleteNonAdminUser() {
         // given
         String email = "anna.nowak@geosurvey.pl"; // SURVEYOR from test_data_account.sql
-
+        Long companyId = 1L;
         // when
-        accountManager.deleteUser(email);
+        accountManager.deleteUser(companyId, email);
 
         // then
         User deleted = userService.findByEmail(email);
@@ -217,10 +217,10 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
     @Test
     void shouldThrowException_WhenDeletingLastActiveAdmin() {
         // given — jan.kowalski is the only active ADMIN in company 1
-        String email = "jan.kowalski@geosurvey.pl";
-
+        String email = "jan.kowalski@geosurvey.pl"; // ADMIN from test_data_account.sql
+        Long companyId = 1L;
         // when then
-        assertThatThrownBy(() -> accountManager.deleteUser(email))
+        assertThatThrownBy(() -> accountManager.deleteUser(companyId, email))
                 .isInstanceOf(BusinessRuleViolationException.class);
     }
 
@@ -228,9 +228,9 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
     void shouldThrowException_WhenUserNotFound() {
         // given
         String nonExistentEmail = "nobody@nowhere.com";
-
+        Long companyId = 1L;
         // when then
-        assertThatThrownBy(() -> accountManager.deleteUser(nonExistentEmail))
+        assertThatThrownBy(() -> accountManager.deleteUser(companyId, nonExistentEmail))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining(nonExistentEmail);
     }
@@ -248,7 +248,7 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
         accountManager.registerUser(companyId, secondAdmin, DEFAULT_PASSWORD);
 
         // when
-        accountManager.deleteUser(secondAdmin.getEmail());
+        accountManager.deleteUser(companyId, secondAdmin.getEmail());
 
         // then
         User deleted = userService.findByEmail(secondAdmin.getEmail());

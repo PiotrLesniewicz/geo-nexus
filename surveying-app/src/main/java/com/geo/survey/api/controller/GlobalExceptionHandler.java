@@ -1,10 +1,7 @@
 package com.geo.survey.api.controller;
 
 import com.geo.survey.api.dto.ErrorResponse;
-import com.geo.survey.domain.exception.BusinessRuleViolationException;
-import com.geo.survey.domain.exception.ParsingException;
-import com.geo.survey.domain.exception.ResourceNotFoundException;
-import com.geo.survey.domain.exception.ValidationDataException;
+import com.geo.survey.domain.exception.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -14,11 +11,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -27,15 +27,21 @@ import java.util.UUID;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    private static final Map<Class<?>, HttpStatus> EXCEPTION_STATUS = Map.of(
-            ConstraintViolationException.class, HttpStatus.BAD_REQUEST,
-            ParsingException.class, HttpStatus.BAD_REQUEST,
-            EntityNotFoundException.class, HttpStatus.NOT_FOUND,
-            ResourceNotFoundException.class, HttpStatus.NOT_FOUND,
-            DataIntegrityViolationException.class, HttpStatus.CONFLICT,
-            BusinessRuleViolationException.class, HttpStatus.CONFLICT,
-            ValidationDataException.class, HttpStatus.UNPROCESSABLE_ENTITY
-    );
+
+    private static final Map<Class<?>, HttpStatus> EXCEPTION_STATUS = new LinkedHashMap<>();
+
+    static {
+        EXCEPTION_STATUS.put(ConstraintViolationException.class, HttpStatus.BAD_REQUEST);
+        EXCEPTION_STATUS.put(ParsingException.class, HttpStatus.BAD_REQUEST);
+        EXCEPTION_STATUS.put(EntityNotFoundException.class, HttpStatus.NOT_FOUND);
+        EXCEPTION_STATUS.put(ResourceNotFoundException.class, HttpStatus.NOT_FOUND);
+        EXCEPTION_STATUS.put(DataIntegrityViolationException.class, HttpStatus.CONFLICT);
+        EXCEPTION_STATUS.put(BusinessRuleViolationException.class, HttpStatus.CONFLICT);
+        EXCEPTION_STATUS.put(ValidationDataException.class, HttpStatus.UNPROCESSABLE_ENTITY);
+        EXCEPTION_STATUS.put(UnauthorizedAccessException.class, HttpStatus.FORBIDDEN);
+        EXCEPTION_STATUS.put(AccessDeniedException.class, HttpStatus.FORBIDDEN);
+        EXCEPTION_STATUS.put(AuthenticationException.class, HttpStatus.UNAUTHORIZED);
+    }
 
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(
