@@ -8,6 +8,8 @@ import com.geo.survey.api.mapper.AccountApiMapperImpl;
 import com.geo.survey.domain.exception.BusinessRuleViolationException;
 import com.geo.survey.domain.exception.ResourceNotFoundException;
 import com.geo.survey.domain.model.Role;
+import com.geo.survey.domain.model.User;
+import com.geo.survey.domain.model.UserSummary;
 import com.geo.survey.domain.service.AccountManager;
 import com.geo.survey.infrastructure.security.CustomUserDetails;
 import com.geo.survey.infrastructure.security.CustomUserDetailsService;
@@ -22,6 +24,8 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.OffsetDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -243,7 +247,119 @@ class AccountControllerTest {
                 .andExpect(status().isConflict());
     }
 
-    // helpers
+    // getUser by email
+
+    @Test
+    void shouldReturn200_whenAdminGetsUserByEmail() throws Exception {
+        // given
+        CustomUserDetails userDetails = getAdminUserDetails();
+        String email = "anna@geo.pl";
+
+        when(accountManager.getUserSummary(userDetails.getCompanyId(), email))
+                .thenReturn(getUserSummary());
+
+        // when, then
+        mockMvc.perform(get("/api/v1/companies/users/{email}", email)
+                        .with(user(userDetails)))
+                .andExpect(status().isOk());
+
+        verify(accountManager).getUserSummary(userDetails.getCompanyId(), email);
+    }
+
+    @Test
+    void shouldReturn404_whenAdminGetsNonExistentUser() throws Exception {
+        // given
+        CustomUserDetails userDetails = getAdminUserDetails();
+        String email = "nobody@geo.pl";
+
+        doThrow(new ResourceNotFoundException("User with email [%s] does not exist".formatted(email)))
+                .when(accountManager).getUserSummary(userDetails.getCompanyId(), email);
+
+        // when, then
+        mockMvc.perform(get("/api/v1/companies/users/{email}", email)
+                        .with(user(userDetails)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReturn403_whenSurveyorTriesToGetUserByEmail() throws Exception {
+        // given
+        CustomUserDetails userDetails = getSurveyorUserDetails();
+        String email = "anna@geo.pl";
+
+        // when, then
+        mockMvc.perform(get("/api/v1/companies/users/{email}", email)
+                        .with(user(userDetails)))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(accountManager);
+    }
+
+// getUser me
+
+    @Test
+    void shouldReturn200_whenAdminGetsOwnProfile() throws Exception {
+        // given
+        CustomUserDetails userDetails = getAdminUserDetails();
+
+        when(accountManager.getUserSummary(userDetails.getUserId()))
+                .thenReturn(getUserSummary());
+
+        // when, then
+        mockMvc.perform(get("/api/v1/companies/users/me")
+                        .with(user(userDetails)))
+                .andExpect(status().isOk());
+
+        verify(accountManager).getUserSummary(userDetails.getUserId());
+    }
+
+    @Test
+    void shouldReturn200_whenSurveyorGetsOwnProfile() throws Exception {
+        // given
+        CustomUserDetails userDetails = getSurveyorUserDetails();
+
+        when(accountManager.getUserSummary(userDetails.getUserId()))
+                .thenReturn(getUserSummary());
+
+        // when, then
+        mockMvc.perform(get("/api/v1/companies/users/me")
+                        .with(user(userDetails)))
+                .andExpect(status().isOk());
+    }
+
+// helpers
+
+    private static CustomUserDetails getSurveyorUserDetails() {
+        return new CustomUserDetails(
+                2L,
+                1L,
+                "surveyor",
+                "password",
+                Role.SURVEYOR,
+                true,
+                true,
+                false
+        );
+    }
+
+    private static UserSummary getUserSummary() {
+        User user = User.builder()
+                .id(2L)
+                .email("anna@geo.pl")
+                .name("Anna")
+                .surname("Nowak")
+                .role(Role.SURVEYOR)
+                .active(true)
+                .registerAt(OffsetDateTime.now())
+                .deletedAt(null)
+                .build();
+
+        return UserSummary.builder()
+                .user(user)
+                .countJob(5)
+                .openJob(2)
+                .build();
+    }
 
     private static @NotNull CustomUserDetails getAdminUserDetails() {
         return new CustomUserDetails(

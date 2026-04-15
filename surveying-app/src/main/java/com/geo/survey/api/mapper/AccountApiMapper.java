@@ -2,8 +2,10 @@ package com.geo.survey.api.mapper;
 
 import com.geo.survey.api.dto.RegisterCompanyRequest;
 import com.geo.survey.api.dto.RegisterUserRequest;
+import com.geo.survey.api.dto.UserDto;
 import com.geo.survey.domain.model.Company;
 import com.geo.survey.domain.model.User;
+import com.geo.survey.domain.model.UserSummary;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -42,4 +44,15 @@ public interface AccountApiMapper {
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "company", ignore = true)
     User toUser(RegisterUserRequest request);
+
+    @Mapping(target = "email",      source = "user.email")
+    @Mapping(target = "name",       source = "user.name")
+    @Mapping(target = "surname",    source = "user.surname")
+    @Mapping(target = "role",       source = "user.role")
+    @Mapping(target = "active",     source = "user.active")
+    @Mapping(target = "registerAt", source = "user.registerAt")
+    @Mapping(target = "deletedAt",  source = "user.deletedAt")
+    @Mapping(target = "countJob",   source = "countJob")
+    @Mapping(target = "openJob",    source = "openJob")
+    UserDto toUserDto(UserSummary user);
 }

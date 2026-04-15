@@ -62,6 +62,7 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
     }
 
     // tests for create company account
+
     @Test
     void shouldCreateCompanyWithCorrectData() {
         //given
@@ -87,7 +88,7 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
 
         //then
         Company savedCompany = companyService.findByNip(company.getNip());
-        User savedUser = userService.findByEmail(admin.getEmail());
+        User savedUser = userService.findByEmail(admin.getEmail(), savedCompany.getId());
         UserAuth savedAuth = userAuthService.findByUserId(savedUser.getId());
 
         assertThat(savedCompany.getId()).isNotNull();
@@ -134,6 +135,7 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
     }
 
     // tests for register user to existing company
+
     @Test
     void shouldRegisterUserToExistingCompany() {
         //given
@@ -147,7 +149,7 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
         accountManager.registerUser(companyId, user, DEFAULT_PASSWORD);
 
         //then
-        User savedUser = userService.findByEmail(user.getEmail());
+        User savedUser = userService.findByEmail(user.getEmail(), companyId);
         UserAuth savedAuth = userAuthService.findByUserId(savedUser.getId());
 
         assertThat(savedUser.getId()).isNotNull();
@@ -200,6 +202,7 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
     }
 
     // tests for delete user
+
     @Test
     void shouldSoftDeleteNonAdminUser() {
         // given
@@ -209,7 +212,7 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
         accountManager.deleteUser(companyId, email);
 
         // then
-        User deleted = userService.findByEmail(email);
+        User deleted = userService.findByEmail(email, companyId);
         assertThat(deleted.isActive()).isFalse();
         assertThat(deleted.getDeletedAt()).isNotNull();
     }
@@ -251,12 +254,46 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
         accountManager.deleteUser(companyId, secondAdmin.getEmail());
 
         // then
-        User deleted = userService.findByEmail(secondAdmin.getEmail());
+        User deleted = userService.findByEmail(secondAdmin.getEmail(), companyId);
         assertThat(deleted.isActive()).isFalse();
         assertThat(deleted.getDeletedAt()).isNotNull();
     }
 
+    // test get info for user
+
+    @Test
+    void shouldGetUserSummaryByUserId() {
+        // given
+        Long userId = 2L; // anna.nowak from test_data_account.sql
+
+        // when
+        UserSummary summary = accountManager.getUserSummary(userId);
+
+        // then
+        assertThat(summary)
+                .returns(userId, s -> s.getUser().getId())
+                .returns(1, UserSummary::getCountJob) // from test_data_account.sql
+                .returns(1, UserSummary::getOpenJob); // from test_data_account.sql
+    }
+
+    @Test
+    void shouldGetUserSummaryByEmail() {
+        // given
+        String email = "ula.zawada@geodeta.pl"; // from test_data_account.sql
+        Long companyId = 3L; // from test_data_account.sql
+
+        // when
+        UserSummary summary = accountManager.getUserSummary(companyId, email);
+
+        // then
+        assertThat(summary)
+                .returns(email, s -> s.getUser().getEmail())
+                .returns(0, UserSummary::getCountJob) // from test_data_account.sql
+                .returns(0, UserSummary::getOpenJob); // from test_data_account.sql
+    }
+
     // tests for block and activate company
+
     @Test
     void shouldBlockActiveCompany() {
         // given

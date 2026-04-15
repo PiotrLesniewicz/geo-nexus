@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
     boolean existsByEmail(String email);
 
-    Optional<UserEntity> findByEmail(String email);
+    Optional<UserEntity> findByEmailAndCompanyId(String email, Long companyId);
 
     @Query("SELECT COUNT(u) FROM UserEntity u WHERE u.company.id = :companyId AND u.role = 'ADMIN' AND u.active = true")
     long countActiveAdminsByCompanyId(@Param("companyId") Long companyId);

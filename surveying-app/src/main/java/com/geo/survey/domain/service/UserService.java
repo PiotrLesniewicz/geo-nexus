@@ -33,8 +33,8 @@ public class UserService {
         return mapper.toDomain(userRepository.save(mapper.toEntity(registered)));
     }
 
-    public User findByEmail(String email) {
-        return userRepository.findByEmail(email)
+    public User findByEmail(String email, Long companyId) {
+        return userRepository.findByEmailAndCompanyId(email, companyId)
                 .map(mapper::toDomain)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "User with email [%s] does not exist".formatted(email))
@@ -54,8 +54,8 @@ public class UserService {
         userRepository.save(mapper.toEntity(deleted));
     }
 
-    public User changeRole(String email, Role role) {
-        User updated = findByEmail(email).changeRole(role);
+    public User changeRole(String email, Long companyId, Role role) {
+        User updated = findByEmail(email, companyId).changeRole(role);
         return mapper.toDomain(userRepository.save(mapper.toEntity(updated)));
     }
 

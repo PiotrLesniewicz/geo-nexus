@@ -86,45 +86,48 @@ class UserServiceTest {
     @Test
     void shouldThrowException_WhenUserNotFoundByEmail() {
         // given
-        when(userRepository.findByEmail(DEFAULT_EMAIL)).thenReturn(Optional.empty());
+        Long companyId = 1L;
+        when(userRepository.findByEmailAndCompanyId(DEFAULT_EMAIL, companyId)).thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> userService.findByEmail(DEFAULT_EMAIL))
+        assertThatThrownBy(() -> userService.findByEmail(DEFAULT_EMAIL, companyId))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining(DEFAULT_EMAIL);
 
-        verify(userRepository).findByEmail(DEFAULT_EMAIL);
+        verify(userRepository).findByEmailAndCompanyId(DEFAULT_EMAIL, companyId);
     }
 
     @Test
     void shouldChangeUserRole() {
         // given
-        when(userRepository.findByEmail(DEFAULT_EMAIL))
+        Long companyId = 1L;
+        when(userRepository.findByEmailAndCompanyId(DEFAULT_EMAIL, companyId))
                 .thenReturn(Optional.of(userMapper.toEntity(activeUser())));
         when(userRepository.save(any(UserEntity.class)))
                 .thenAnswer(i -> i.getArgument(0));
 
         // when
-        User result = userService.changeRole(DEFAULT_EMAIL, Role.ADMIN);
+        User result = userService.changeRole(DEFAULT_EMAIL, companyId, Role.ADMIN);
 
         // then
         assertThat(result.getRole()).isEqualTo(Role.ADMIN);
-        verify(userRepository).findByEmail(DEFAULT_EMAIL);
+        verify(userRepository).findByEmailAndCompanyId(DEFAULT_EMAIL, companyId);
         verify(userRepository).save(any(UserEntity.class));
     }
 
     @Test
     void shouldThrowException_WhenChangingToTheSameRole() {
         // given
-        when(userRepository.findByEmail(DEFAULT_EMAIL))
+        Long companyId = 1L;
+        when(userRepository.findByEmailAndCompanyId(DEFAULT_EMAIL, companyId))
                 .thenReturn(Optional.of(userMapper.toEntity(activeUser())));
 
         // when & then
-        assertThatThrownBy(() -> userService.changeRole(DEFAULT_EMAIL, Role.SURVEYOR))
+        assertThatThrownBy(() -> userService.changeRole(DEFAULT_EMAIL, companyId, Role.SURVEYOR))
                 .isInstanceOf(BusinessRuleViolationException.class)
                 .hasMessageContaining(DEFAULT_EMAIL);
 
-        verify(userRepository).findByEmail(DEFAULT_EMAIL);
+        verify(userRepository).findByEmailAndCompanyId(DEFAULT_EMAIL, companyId);
         verify(userRepository, never()).save(any());
     }
 }

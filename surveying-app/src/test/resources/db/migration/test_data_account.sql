@@ -20,3 +20,12 @@ VALUES (1, 'jan.kowalski@geosurvey.pl', 'Jan', 'Kowalski', 'ADMIN', TRUE, '2020-
        (1, 'anna.nowak@geosurvey.pl', 'Anna', 'Nowak', 'SURVEYOR', TRUE, '2020-02-05T08:00:00Z', NULL),
        (2, 'piotr.wisniewski@geodeta.pl', 'Piotr', 'Wiśniewski', 'SURVEYOR', FALSE, '2021-04-01T10:00:00Z', NULL),
        (3, 'ula.zawada@geodeta.pl', 'Ula', 'Zawada', 'ADMIN', FALSE, '2021-04-01T10:00:00Z', '2023-10-20T12:00:00Z');
+
+-- =========================
+-- Test data: Job
+-- =========================
+
+INSERT INTO job (job_identifier, street, building_number, postal_code, city, country,
+                 status, description, created_at, company_id, user_id)
+VALUES ('JOB-2024-001', 'ul. Polna', '5', '00-100', 'Warszawa', 'Polska',
+        'OPEN', 'Niwelacja terenu - test', '2024-06-01T08:00:00Z', 1, 2);

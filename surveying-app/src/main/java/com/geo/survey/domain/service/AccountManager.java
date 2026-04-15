@@ -5,6 +5,7 @@ import com.geo.survey.domain.exception.UnauthorizedAccessException;
 import com.geo.survey.domain.model.Company;
 import com.geo.survey.domain.model.Role;
 import com.geo.survey.domain.model.User;
+import com.geo.survey.domain.model.UserSummary;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ public class AccountManager {
     private final CompanyService companyService;
     private final UserService userService;
     private final UserAuthService userAuthService;
+    private final JobService jobService;
 
     @Transactional
     public void registerCompanyWithAdmin(Company company, User admin, String password) {
@@ -40,7 +42,7 @@ public class AccountManager {
 
     @Transactional
     public void deleteUser(Long companyId, String email) {
-        User user = userService.findByEmail(email);
+        User user = userService.findByEmail(email, companyId);
         assertUserIsNotSuperAdmin(user);
         if (!Objects.equals(user.getCompany().getId(), companyId)) {
             throw new UnauthorizedAccessException("User does not belong to the company");
@@ -71,6 +73,22 @@ public class AccountManager {
         companyService.activateCompany(company);
     }
 
+    @Transactional
+    public UserSummary getUserSummary(Long userId) {
+        User user = userService.findById(userId);
+        int countJob = jobService.countByUserId(user.getId());
+        int openJob  = jobService.countOpenByUserId(user.getId());
+        return buildUserSummary(user, countJob, openJob);
+    }
+
+    @Transactional
+    public UserSummary getUserSummary(Long companyId, String email) {
+        User user = userService.findByEmail(email, companyId);
+        int countJob = jobService.countByUserId(user.getId());
+        int openJob  = jobService.countOpenByUserId(user.getId());
+        return buildUserSummary(user, countJob, openJob);
+    }
+
     private static void assertUserIsNotSuperAdmin(User user) {
         if (user.getRole() == Role.SUPER_ADMIN) {
             throw new BusinessRuleViolationException("Cannot assign SUPER_ADMIN role");
@@ -79,5 +97,13 @@ public class AccountManager {
 
     private boolean isLastActiveAdmin(User user) {
         return userService.countActiveAdmins(user.getCompany().getId()) <= 1;
+    }
+
+    private static UserSummary buildUserSummary(User user, int countJob, int openJob) {
+        return UserSummary.builder()
+                .user(user)
+                .countJob(countJob)
+                .openJob(openJob)
+                .build();
     }
 }

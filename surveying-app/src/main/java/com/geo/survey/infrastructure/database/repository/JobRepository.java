@@ -16,4 +16,8 @@ public interface JobRepository extends JpaRepository<JobEntity, Long> {
 
     @EntityGraph(attributePaths = {"company", "user"})
     Optional<JobEntity> findByJobIdentifierAndCompanyId(String jobIdentifier, Long companyId);
+
+    int countByUserId(Long userId);
+
+    int countOpenByUserId(Long userId);
 }

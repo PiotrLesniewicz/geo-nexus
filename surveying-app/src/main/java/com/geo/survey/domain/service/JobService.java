@@ -60,4 +60,12 @@ public class JobService {
         }
         jobRepository.deleteById(id);
     }
+
+    public int countByUserId(Long userId) {
+        return jobRepository.countByUserId(userId);
+    }
+
+    public int countOpenByUserId(Long userId) {
+        return jobRepository.countOpenByUserId(userId);
+    }
 }

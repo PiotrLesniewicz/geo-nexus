@@ -2,12 +2,15 @@ package com.geo.survey.api.controller;
 
 import com.geo.survey.api.dto.RegisterCompanyRequest;
 import com.geo.survey.api.dto.RegisterUserRequest;
+import com.geo.survey.api.dto.UserDto;
 import com.geo.survey.api.mapper.AccountApiMapper;
 import com.geo.survey.domain.model.Company;
 import com.geo.survey.domain.model.User;
+import com.geo.survey.domain.model.UserSummary;
 import com.geo.survey.domain.service.AccountManager;
 import com.geo.survey.infrastructure.security.CustomUserDetails;
 import com.geo.survey.infrastructure.security.annotation.IsAdmin;
+import com.geo.survey.infrastructure.security.annotation.IsAdminOrSurveyor;
 import com.geo.survey.infrastructure.security.annotation.IsSuperAdmin;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -48,6 +51,25 @@ public class AccountController {
             @PathVariable String email) {
         accountManager.deleteUser(userDetails.getCompanyId(), email);
         return ResponseEntity.noContent().build();
+    }
+
+    @IsAdmin
+    @GetMapping("/users/{email}")
+    public ResponseEntity<UserDto> getUserByEmail(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable String email
+    ) {
+        UserSummary user = accountManager.getUserSummary(userDetails.getCompanyId(), email);
+        return ResponseEntity.ok(mapper.toUserDto(user));
+    }
+
+    @IsAdminOrSurveyor
+    @GetMapping("/users/me")
+    public ResponseEntity<UserDto> getMyProfile(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        UserSummary user = accountManager.getUserSummary(userDetails.getUserId());
+        return ResponseEntity.ok(mapper.toUserDto(user));
     }
 
     @IsSuperAdmin
