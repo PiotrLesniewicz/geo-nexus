@@ -3,14 +3,10 @@ package com.geo.survey.api.mapper;
 import com.geo.survey.api.dto.CreateJobRequest;
 import com.geo.survey.api.dto.JobResponse;
 import com.geo.survey.api.dto.LevelingReportResponse;
-import com.geo.survey.api.dto.LevelingStationResponse;
 import com.geo.survey.domain.model.Job;
 import com.geo.survey.domain.model.LevelingReport;
-import com.geo.survey.domain.model.LevelingStation;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-
-import java.util.List;
 
 @Mapper
 public interface JobApiMapper {
@@ -30,8 +26,10 @@ public interface JobApiMapper {
     @Mapping(target = "address.country", source = "country")
     Job toJob(CreateJobRequest request);
 
-    @Mapping(target = "companyId", source = "company.id")
-    @Mapping(target = "userId", source = "user.id")
+    @Mapping(target = "companyName", source = "company.name")
+    @Mapping(target = "nip", source = "company.nip")
+    @Mapping(target = "userName", source = "user.name")
+    @Mapping(target = "userSurname", source = "user.surname")
     @Mapping(target = "street", source = "address.street")
     @Mapping(target = "buildingNumber", source = "address.buildingNumber")
     @Mapping(target = "apartmentNumber", source = "address.apartmentNumber")
@@ -44,8 +42,4 @@ public interface JobApiMapper {
 
     @Mapping(target = "jobIdentifier", source = "job.jobIdentifier")
     LevelingReportResponse toLevelingReportResponse(LevelingReport report);
-
-    List<LevelingReportResponse> toLevelingReportResponseList(List<LevelingReport> reports);
-
-    LevelingStationResponse toLevelingStationResponse(LevelingStation station);
 }

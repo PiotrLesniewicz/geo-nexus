@@ -13,7 +13,5 @@ public record CreateJobRequest(
         String city,
         String county,
         String voivodeship,
-        String country,
-        Long companyId,
-        Long userId
+        String country
 ) {}

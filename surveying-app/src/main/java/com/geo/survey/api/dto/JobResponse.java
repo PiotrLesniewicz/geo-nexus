@@ -4,7 +4,6 @@ import com.geo.survey.domain.model.StatusJob;
 import java.time.OffsetDateTime;
 
 public record JobResponse(
-        Long id,
         String jobIdentifier,
         String description,
         StatusJob status,
@@ -17,6 +16,8 @@ public record JobResponse(
         String voivodeship,
         String country,
         OffsetDateTime createdAt,
-        Long companyId,
-        Long userId
+        String companyName,
+        String nip,
+        String userName,
+        String userSurname
 ) {}

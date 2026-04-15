@@ -5,6 +5,8 @@ import com.geo.survey.domain.exception.ParsingException;
 import com.geo.survey.domain.model.*;
 import com.geo.survey.math.value.LevelingType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,7 +14,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.OffsetDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -30,14 +31,12 @@ public class JobSurveyManager {
             throw new BusinessRuleViolationException("Company is not active");
         }
         User user = userService.findById(userId);
-        if (!user.isActive()) {
-            throw new BusinessRuleViolationException("User is not active");
-        }
         return jobService.create(job, company, user);
     }
 
     @Transactional
     public LevelingReport processLevelingFile(
+            Long companyId,
             String jobIdentifier,
             Double startH,
             Double endH,
@@ -45,7 +44,7 @@ public class JobSurveyManager {
             LevelingType type,
             OffsetDateTime observationTime
     ) {
-        Job job = jobService.getByJobIdentifier(jobIdentifier);
+        Job job = jobService.getByJobIdentifier(jobIdentifier, companyId);
         if (job.getStatus() != StatusJob.OPEN) {
             throw new BusinessRuleViolationException("Job is not open");
         }
@@ -56,11 +55,11 @@ public class JobSurveyManager {
         }
     }
 
-    public Job findJobByIdentifier(String jobIdentifier) {
-        return jobService.getByJobIdentifier(jobIdentifier);
+    public Job findJobByIdentifier(Long companyId, String jobIdentifier) {
+        return jobService.getByJobIdentifier(jobIdentifier, companyId);
     }
 
-    public List<LevelingReport> findLevelingReports(String jobIdentifier) {
-        return levelingService.findLevelingReports(jobIdentifier);
+    public Page<LevelingReport> findLevelingReports(String jobIdentifier, Long companyId, Pageable pageable) {
+        return levelingService.findLevelingReports(jobIdentifier, companyId, pageable);
     }
 }

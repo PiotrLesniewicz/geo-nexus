@@ -1,6 +1,7 @@
 package com.geo.survey.infrastructure.database.repository;
 
 import com.geo.survey.infrastructure.database.entity.JobEntity;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -13,5 +14,6 @@ public interface JobRepository extends JpaRepository<JobEntity, Long> {
 
     List<JobEntity> findAllByUserId(Long userId);
 
-    Optional<JobEntity> findByJobIdentifier(String jobIdentifier);
+    @EntityGraph(attributePaths = {"company", "user"})
+    Optional<JobEntity> findByJobIdentifierAndCompanyId(String jobIdentifier, Long companyId);
 }

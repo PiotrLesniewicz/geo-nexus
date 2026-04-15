@@ -52,17 +52,18 @@ class JobServiceTest {
     @Test
     void shouldThrowException_WhenJobNotFoundByJobIdentifier() {
         // given
+        Long companyId = 1L;
         String jobIdentifier = "JOB.2025.10";
 
-        when(jobRepository.findByJobIdentifier(jobIdentifier)).thenReturn(Optional.empty());
+        when(jobRepository.findByJobIdentifierAndCompanyId(jobIdentifier, companyId)).thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> jobService.getByJobIdentifier(jobIdentifier))
+        assertThatThrownBy(() -> jobService.getByJobIdentifier(jobIdentifier, companyId))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Job not found")
                 .hasMessageContaining(jobIdentifier);
 
-        verify(jobRepository).findByJobIdentifier(jobIdentifier);
+        verify(jobRepository).findByJobIdentifierAndCompanyId(jobIdentifier, companyId);
     }
 
     // create tests

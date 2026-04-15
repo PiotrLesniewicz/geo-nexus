@@ -12,6 +12,8 @@ import com.geo.survey.math.value.LevelingObservation;
 import com.geo.survey.math.value.LevelingResultReport;
 import com.geo.survey.math.value.LevelingType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
@@ -59,13 +61,12 @@ public class LevelingService {
         return parsers.stream()
                 .filter(p -> p.supports(filename))
                 .findFirst()
-                .orElseThrow(() -> new ParsingException("Unsupported file format: " + filename));
+                .orElseThrow(() -> new ParsingException("Unsupported file format: [%s]".formatted(filename)));
     }
 
-    public List<LevelingReport> findLevelingReports(String jobIdentifier) {
-        List<LevelingReportEntity> jobEntity = levelingReportRepository.findByJobIdentifier(jobIdentifier);
-        return jobEntity.stream()
-                .map(levelingReportMapper::toDomain)
-                .toList();
+    public Page<LevelingReport> findLevelingReports(String jobIdentifier, Long companyId, Pageable pageable) {
+        return levelingReportRepository
+                .findByJobIdentifierAndCompanyId(jobIdentifier, companyId, pageable)
+                .map(levelingReportMapper::toDomain);
     }
 }

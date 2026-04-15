@@ -14,6 +14,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -27,7 +30,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 @ActiveProfiles("test")
 @AllArgsConstructor(onConstructor_ = @Autowired)
-@Sql(scripts = {"/db/cleanup.sql", "/db/test_data_job_leveling.sql"},
+@Sql(scripts = {"/db/migration/cleanup.sql", "/db/migration/test_data_job_leveling.sql"},
         executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class JobSurveyManagerIntegrationTest extends TestContainerConfig {
 
@@ -44,7 +46,8 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
     @MockitoBean
     private Clock clock;
 
-    private static final String JOB_IDENTIFIER = "JOB-2024-001";   // from test_data_job_leveling.sql
+    private static final String JOB_IDENTIFIER = "JOB-2024-001"; // from test_data_job_leveling.sql
+    private static final Long COMPANY_ID = 1L; // from test_data_job_leveling.sql
     private static final Double START_H = 100.000;
     private static final Double END_H = 100.500;
 
@@ -92,9 +95,7 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
         BigDecimal expectedSequenceDistance = new BigDecimal("0.4860");
 
         // when
-        LevelingReport result = jobSurveyManager.processLevelingFile(
-                JOB_IDENTIFIER, START_H, END_H, uploadFile,
-                LevelingType.ONE_WAY, observationTime);
+        LevelingReport result = reportOneWayLeveling(uploadFile, observationTime);
 
         // then
         assertThat(result.getId()).isNotNull();
@@ -103,6 +104,7 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
         assertThat(result.getSequenceDistance()).isEqualByComparingTo(expectedSequenceDistance);
 
         assertThat(result.getJob().getJobIdentifier()).isEqualTo(JOB_IDENTIFIER);
+        assertThat(result.getJob().getCompany().getId()).isEqualTo(COMPANY_ID);
         assertThat(result.getStations())
                 .isNotNull()
                 .hasSize(10);
@@ -122,8 +124,14 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
 
         // when
         LevelingReport result = jobSurveyManager.processLevelingFile(
-                JOB_IDENTIFIER, null, null, uploadFile,
-                LevelingType.ONE_WAY, observationTime);
+                COMPANY_ID,
+                JOB_IDENTIFIER,
+                null,
+                null,
+                uploadFile,
+                LevelingType.ONE_WAY,
+                observationTime
+        );
 
         // then
         assertThat(result.getId()).isNotNull();
@@ -144,9 +152,7 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
         BigDecimal expectedSequenceDistance = new BigDecimal("0.4860");
 
         // when
-        LevelingReport result = jobSurveyManager.processLevelingFile(
-                JOB_IDENTIFIER, START_H, END_H, uploadFile,
-                LevelingType.ONE_WAY_DOUBLE, observationTime);
+        LevelingReport result = reportOneWayDoubleLeveling(uploadFile, observationTime);
 
         // then
         assertThat(result.getId()).isNotNull();
@@ -169,7 +175,7 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
     // add two report for one job
 
     @Test
-    void shouldProcessTwoLevelingReports_forSameJob() throws IOException {
+    void shouldStoreTwoLevelingReports_andReturnBothForSameJob() throws IOException {
         // given
         InputStream streamFirst = getStream("leveling/one_way_10stations.csv");
         InputStream streamSecond = getStream("leveling/one_way_double_10stations.csv");
@@ -180,14 +186,12 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
         BigDecimal expectedMisclosureFirst = new BigDecimal("0.0020");
         BigDecimal expectedMisclosureSecond = new BigDecimal("-0.0025");
 
-        // when
-        LevelingReport firstReport = jobSurveyManager.processLevelingFile(
-                JOB_IDENTIFIER, START_H, END_H, uploadFileFirst,
-                LevelingType.ONE_WAY, observationTime);
+        Pageable pageable = PageRequest.of(0,10);
 
-        LevelingReport secondReport = jobSurveyManager.processLevelingFile(
-                JOB_IDENTIFIER, START_H, END_H, uploadFileSecond,
-                LevelingType.ONE_WAY_DOUBLE, observationTime);
+        // when
+        LevelingReport firstReport = reportOneWayLeveling(uploadFileFirst, observationTime);
+
+        LevelingReport secondReport = reportOneWayDoubleLeveling(uploadFileSecond, observationTime);
 
         // then
         assertThat(firstReport.getId()).isNotNull();
@@ -211,8 +215,8 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
         assertThat(firstReport.getStations().getFirst().getBacksightElev2()).isNull();
         assertThat(secondReport.getStations().getFirst().getBacksightElev2()).isNotNull();
 
-        List<LevelingReport> reportsForJob = jobSurveyManager.findLevelingReports(JOB_IDENTIFIER);
-        assertThat(reportsForJob).hasSize(2);
+        Page<LevelingReport> reportsForJob = jobSurveyManager.findLevelingReports(JOB_IDENTIFIER, COMPANY_ID, pageable);
+        assertThat(reportsForJob.getTotalElements()).isEqualTo(2);
     }
 
     // createJob business rule validation tests
@@ -234,37 +238,27 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
                 .hasMessageContaining("Company is not active");
     }
 
-    @Test
-    void shouldThrowException_WhenCreatingJobWithInactiveUser() {
-        // given
-        Long companyId = 1L;
-        Long inactiveUserId = 3L; // piotr.wisniewski@geodeta.pl - active = FALSE from test_data_job_leveling.sql
-
-        Job job = Job.builder()
-                .jobIdentifier("JOB-2024-INACTIVE-USER")
-                .description("Job with inactive user")
-                .build();
-
-        // when & then
-        assertThatThrownBy(() -> jobSurveyManager.createJob(job, companyId, inactiveUserId))
-                .isInstanceOf(BusinessRuleViolationException.class)
-                .hasMessageContaining("User is not active");
-    }
-
     // processLevelingFile business rule validation tests
 
     @Test
     void shouldThrowException_WhenProcessingLevelingFileForClosedJob() throws IOException {
         // given
         String closedJobIdentifier = "JOB-2024-CLOSED"; // closed job from test_data_job_leveling.sql
+
         InputStream stream = getStream("leveling/one_way_10stations.csv");
         MultipartFile uploadFile = new MockMultipartFile("one_way_10stations.csv", stream);
         OffsetDateTime observationTime = OffsetDateTime.now(clock);
 
         // when & then
         assertThatThrownBy(() -> jobSurveyManager.processLevelingFile(
-                closedJobIdentifier, START_H, END_H, uploadFile,
-                LevelingType.ONE_WAY, observationTime))
+                COMPANY_ID,
+                closedJobIdentifier,
+                START_H,
+                END_H,
+                uploadFile,
+                LevelingType.ONE_WAY,
+                observationTime
+        ))
                 .isInstanceOf(BusinessRuleViolationException.class)
                 .hasMessageContaining("Job is not open");
     }
@@ -273,7 +267,32 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
 
     private InputStream getStream(String filename) {
         InputStream stream = getClass().getClassLoader().getResourceAsStream(filename);
-        assertThat(stream).as("Test file not found: " + filename).isNotNull();
+        assertThat(stream).as("Test file not found: [%s]".formatted(filename)).isNotNull();
         return stream;
+    }
+
+    private LevelingReport reportOneWayDoubleLeveling(MultipartFile uploadFileSecond, OffsetDateTime observationTime) {
+        return jobSurveyManager.processLevelingFile(
+                COMPANY_ID,
+                JOB_IDENTIFIER,
+                START_H,
+                END_H,
+                uploadFileSecond,
+                LevelingType.ONE_WAY_DOUBLE,
+                observationTime
+        );
+    }
+
+    private LevelingReport reportOneWayLeveling(MultipartFile uploadFileFirst, OffsetDateTime observationTime) {
+        return jobSurveyManager.processLevelingFile(
+                COMPANY_ID,
+                JOB_IDENTIFIER,
+                START_H,
+                END_H,
+                uploadFileFirst,
+                LevelingType.ONE_WAY,
+                observationTime
+
+        );
     }
 }

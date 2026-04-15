@@ -32,11 +32,11 @@ public class JobService {
         return jobMapper.toDomain(jobRepository.save(entity));
     }
 
-    public Job getByJobIdentifier(String jobIdentifier) {
-        return jobRepository.findByJobIdentifier(jobIdentifier)
+    public Job getByJobIdentifier(String jobIdentifier, Long companyId) {
+        return jobRepository.findByJobIdentifierAndCompanyId(jobIdentifier, companyId)
                 .map(jobMapper::toDomain)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Job not found with jobIdentifier: [" + jobIdentifier + "]"));
+                        "Job not found with jobIdentifier: [%s]".formatted(jobIdentifier)));
     }
 
     public List<Job> getAllByCompany(Long companyId) {
