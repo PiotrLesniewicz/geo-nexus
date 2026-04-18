@@ -56,6 +56,15 @@ public class AccountManager {
     }
 
     @Transactional
+    public void changeRole(String email, Long companyId, Role role) {
+        User user = userService.findByEmail(email, companyId);
+        if (user.getRole() == Role.ADMIN && isLastActiveAdmin(user)) {
+            throw new BusinessRuleViolationException("Cannot change the last active admin of the company");
+        }
+        userService.changeRole(user, role);
+    }
+
+    @Transactional
     public void blockCompany(String nip) {
         Company company = companyService.findByNip(nip);
         if (!company.isActive()) {
@@ -74,10 +83,18 @@ public class AccountManager {
     }
 
     @Transactional
+    public void changePassword(Long userId, String oldPassword, String newPassword) {
+        if (!userAuthService.verifyPassword(userId, oldPassword)) {
+            throw new UnauthorizedAccessException("Incorrect current password");
+        }
+        userAuthService.updatePassword(userId, newPassword);
+    }
+
+    @Transactional
     public UserSummary getUserSummary(Long userId) {
         User user = userService.findById(userId);
         int countJob = jobService.countByUserId(user.getId());
-        int openJob  = jobService.countOpenByUserId(user.getId());
+        int openJob = jobService.countOpenByUserId(user.getId());
         return buildUserSummary(user, countJob, openJob);
     }
 
@@ -85,7 +102,7 @@ public class AccountManager {
     public UserSummary getUserSummary(Long companyId, String email) {
         User user = userService.findByEmail(email, companyId);
         int countJob = jobService.countByUserId(user.getId());
-        int openJob  = jobService.countOpenByUserId(user.getId());
+        int openJob = jobService.countOpenByUserId(user.getId());
         return buildUserSummary(user, countJob, openJob);
     }
 

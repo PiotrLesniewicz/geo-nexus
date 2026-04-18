@@ -2,11 +2,13 @@ package com.geo.survey.integration;
 
 import com.geo.survey.domain.exception.BusinessRuleViolationException;
 import com.geo.survey.domain.exception.ResourceNotFoundException;
+import com.geo.survey.domain.exception.UnauthorizedAccessException;
 import com.geo.survey.domain.model.*;
 import com.geo.survey.domain.service.AccountManager;
 import com.geo.survey.domain.service.CompanyService;
 import com.geo.survey.domain.service.UserAuthService;
 import com.geo.survey.domain.service.UserService;
+import com.geo.survey.infrastructure.database.repository.CompanyRepository;
 import com.geo.survey.testconfig.TestContainerConfig;
 import lombok.AllArgsConstructor;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +38,7 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
 
     private AccountManager accountManager;
     private CompanyService companyService;
+    private CompanyRepository companyRepository;
     private UserService userService;
     private UserAuthService userAuthService;
     private PasswordEncoder passwordEncoder;
@@ -59,6 +62,49 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
         Instant fixInstant = Instant.parse("2020-10-03T12:00:00Z");
         Mockito.when(clock.instant()).thenReturn(fixInstant);
         Mockito.when(clock.getZone()).thenReturn(ZoneOffset.UTC);
+    }
+
+    // tests for transactional rollback
+
+    @Test
+    void shouldRollbackTransaction_WhenUserEmailAlreadyExists() {
+        // given — email already exists in DB (from test_data_account.sql)
+        Long companiesBefore = companyRepository.count();
+        String existingEmail = "jan.kowalski@geosurvey.pl";
+        User adminWithExistingEmail = DEFAULT_USER.toBuilder()
+                .email(existingEmail)
+                .build();
+
+        // when then
+        assertThatThrownBy(() -> accountManager.registerCompanyWithAdmin(DEFAULT_COMPANY, adminWithExistingEmail, DEFAULT_PASSWORD))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining(existingEmail);
+
+        // then — company should NOT be saved due to rollback
+        Long companiesAfter = companyRepository.count();
+        assertThat(companiesAfter).isEqualTo(companiesBefore);
+        assertThat(companyRepository.existsByNip(DEFAULT_COMPANY.getNip())).isFalse();
+    }
+
+    @Test
+    void shouldRollbackTransaction_WhenNipAlreadyExists() {
+        // given — try to register with existing NIP but different email
+        Long companiesBefore = companyRepository.count();
+        Company existingNipCompany = DEFAULT_COMPANY.toBuilder()
+                .nip("1234567890") // existing NIP from test_data_account.sql
+                .build();
+        User newAdmin = DEFAULT_USER.toBuilder()
+                .email("brand.new.admin@test.pl")
+                .build();
+
+        // when then
+        assertThatThrownBy(() -> accountManager.registerCompanyWithAdmin(existingNipCompany, newAdmin, DEFAULT_PASSWORD))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("1234567890");
+
+        // then — no new company should be saved due to rollback
+        Long companiesAfter = companyRepository.count();
+        assertThat(companiesAfter).isEqualTo(companiesBefore);
     }
 
     // tests for create company account
@@ -364,6 +410,97 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
         assertThatThrownBy(() -> accountManager.activateCompany(nonExistentNip))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining(nonExistentNip);
+    }
+
+    // tests for change role
+
+    @Test
+    void shouldChangeUserRole() {
+        // given
+        String email = "anna.nowak@geosurvey.pl"; // SURVEYOR from test_data_account.sql
+        Long companyId = 1L;
+
+        // when
+        accountManager.changeRole(email, companyId, Role.ADMIN);
+
+        // then
+        User updated = userService.findByEmail(email, companyId);
+        assertThat(updated.getRole()).isEqualTo(Role.ADMIN);
+    }
+
+    @Test
+    void shouldThrowException_WhenChangingRoleOfLastActiveAdmin() {
+        // given — jan.kowalski is the only active ADMIN in company 1
+        String email = "jan.kowalski@geosurvey.pl"; // ADMIN from test_data_account.sql
+        Long companyId = 1L;
+
+        // when then
+        assertThatThrownBy(() -> accountManager.changeRole(email, companyId, Role.SURVEYOR))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("Cannot change the last active admin");
+    }
+
+    @Test
+    void shouldThrowException_WhenChangingRoleOfNonExistentUser() {
+        // given
+        String nonExistentEmail = "nobody@nowhere.com";
+        Long companyId = 1L;
+
+        // when then
+        assertThatThrownBy(() -> accountManager.changeRole(nonExistentEmail, companyId, Role.ADMIN))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining(nonExistentEmail);
+    }
+
+    @Test
+    void shouldChangeAdminRoleWhenNotLastActiveAdmin() {
+        // given — add second admin so first can be demoted
+        Long companyId = 1L;
+        User secondAdmin = User.builder()
+                .email("second.admin@geosurvey.pl")
+                .name("Second")
+                .surname("Admin")
+                .role(Role.ADMIN)
+                .build();
+        accountManager.registerUser(companyId, secondAdmin, DEFAULT_PASSWORD);
+
+        // when
+        accountManager.changeRole("jan.kowalski@geosurvey.pl", companyId, Role.SURVEYOR);
+
+        // then
+        User demoted = userService.findByEmail("jan.kowalski@geosurvey.pl", companyId);
+        assertThat(demoted.getRole()).isEqualTo(Role.SURVEYOR);
+    }
+
+    // tests for change password
+
+    @Test
+    void shouldChangePassword() {
+        // given
+        Long userId = 2L; // anna.nowak from test_data_account.sql
+        String password = "password123";
+        String newPassword = "newSecurePass456";
+
+        // when
+        accountManager.changePassword(userId, password, newPassword);
+
+        // then
+        UserAuth auth = userAuthService.findByUserId(userId);
+        assertThat(passwordEncoder.matches(newPassword, auth.getPasswordHash())).isTrue();
+        assertThat(auth.getPasswordChangedAt()).isNotNull();
+    }
+
+    @Test
+    void shouldThrowException_WhenOldPasswordIsIncorrect() {
+        // given
+        Long userId = 2L; // anna.nowak from test_data_account.sql
+        String wrongPassword = "wrongPassword";
+        String newPassword = "newSecurePass456";
+
+        // when then
+        assertThatThrownBy(() -> accountManager.changePassword(userId, wrongPassword, newPassword))
+                .isInstanceOf(UnauthorizedAccessException.class)
+                .hasMessageContaining("Incorrect current password");
     }
 
 }

@@ -54,8 +54,8 @@ public class UserService {
         userRepository.save(mapper.toEntity(deleted));
     }
 
-    public User changeRole(String email, Long companyId, Role role) {
-        User updated = findByEmail(email, companyId).changeRole(role);
+    public User changeRole(User user, Role role) {
+        User updated = user.changeRole(role);
         return mapper.toDomain(userRepository.save(mapper.toEntity(updated)));
     }
 

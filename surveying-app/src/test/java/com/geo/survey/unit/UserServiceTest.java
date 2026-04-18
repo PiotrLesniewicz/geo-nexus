@@ -1,6 +1,7 @@
 package com.geo.survey.unit;
 
-import com.geo.survey.domain.exception.*;
+import com.geo.survey.domain.exception.BusinessRuleViolationException;
+import com.geo.survey.domain.exception.ResourceNotFoundException;
 import com.geo.survey.domain.model.Role;
 import com.geo.survey.domain.model.User;
 import com.geo.survey.domain.service.UserService;
@@ -19,7 +20,8 @@ import java.time.ZoneOffset;
 import java.util.Optional;
 
 import static com.geo.survey.testdata.UserFixture.*;
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -28,7 +30,6 @@ import static org.mockito.Mockito.*;
 class UserServiceTest {
 
     private UserService userService;
-    private UserMapper userMapper;
 
     @Mock
     private UserRepository userRepository;
@@ -37,7 +38,7 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        userMapper = new UserMapperImpl();
+        UserMapper userMapper = new UserMapperImpl();
         userService = new UserService(userRepository, userMapper, clock);
     }
 
@@ -100,34 +101,23 @@ class UserServiceTest {
     @Test
     void shouldChangeUserRole() {
         // given
-        Long companyId = 1L;
-        when(userRepository.findByEmailAndCompanyId(DEFAULT_EMAIL, companyId))
-                .thenReturn(Optional.of(userMapper.toEntity(activeUser())));
         when(userRepository.save(any(UserEntity.class)))
                 .thenAnswer(i -> i.getArgument(0));
 
         // when
-        User result = userService.changeRole(DEFAULT_EMAIL, companyId, Role.ADMIN);
+        User result = userService.changeRole(activeUser(), Role.ADMIN);
 
         // then
         assertThat(result.getRole()).isEqualTo(Role.ADMIN);
-        verify(userRepository).findByEmailAndCompanyId(DEFAULT_EMAIL, companyId);
         verify(userRepository).save(any(UserEntity.class));
     }
 
     @Test
     void shouldThrowException_WhenChangingToTheSameRole() {
-        // given
-        Long companyId = 1L;
-        when(userRepository.findByEmailAndCompanyId(DEFAULT_EMAIL, companyId))
-                .thenReturn(Optional.of(userMapper.toEntity(activeUser())));
-
-        // when & then
-        assertThatThrownBy(() -> userService.changeRole(DEFAULT_EMAIL, companyId, Role.SURVEYOR))
+        // given, when, then
+        User user = activeUser();
+        assertThatThrownBy(() -> userService.changeRole(user, Role.SURVEYOR))
                 .isInstanceOf(BusinessRuleViolationException.class)
-                .hasMessageContaining(DEFAULT_EMAIL);
-
-        verify(userRepository).findByEmailAndCompanyId(DEFAULT_EMAIL, companyId);
-        verify(userRepository, never()).save(any());
+                .hasMessageContaining(user.getEmail());
     }
 }

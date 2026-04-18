@@ -29,4 +29,12 @@ public class UserAuth {
                 .build();
 
     }
+
+    public UserAuth updatePassword(String newPasswordHash, Clock clock) {
+        return this.toBuilder()
+                .passwordHash(newPasswordHash)
+                .passwordChangedAt(OffsetDateTime.now(clock))
+                .mustChange(false)
+                .build();
+    }
 }

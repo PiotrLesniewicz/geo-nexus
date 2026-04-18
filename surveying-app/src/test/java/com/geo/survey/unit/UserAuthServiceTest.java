@@ -71,7 +71,44 @@ class UserAuthServiceTest {
         // when then
         assertThatThrownBy(() -> userAuthService.findByUserId(userId))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining(String.valueOf(userId));
+                .hasMessageContaining("Auth not found");
+    }
+
+    @Test
+    void shouldReturnTrue_WhenPasswordMatches() {
+        // given
+        Long userId = 1L;
+        String rawPassword = "tajnehaslo";
+        String hash = passwordEncoder.encode(rawPassword);
+
+        UserAuthEntity entity = new UserAuthEntity();
+        entity.setPasswordHash(hash);
+
+        when(userAuthRepository.findByUserId(userId)).thenReturn(Optional.of(entity));
+
+        // when
+        boolean result = userAuthService.verifyPassword(userId, rawPassword);
+
+        // then
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    void shouldReturnFalse_WhenPasswordDoesNotMatch() {
+        // given
+        Long userId = 1L;
+        String hash = passwordEncoder.encode("correctPassword");
+
+        UserAuthEntity entity = new UserAuthEntity();
+        entity.setPasswordHash(hash);
+
+        when(userAuthRepository.findByUserId(userId)).thenReturn(Optional.of(entity));
+
+        // when
+        boolean result = userAuthService.verifyPassword(userId, "wrongPassword");
+
+        // then
+        assertThat(result).isFalse();
     }
 
 }

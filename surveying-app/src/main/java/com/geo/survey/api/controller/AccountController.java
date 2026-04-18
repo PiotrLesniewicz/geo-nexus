@@ -1,8 +1,6 @@
 package com.geo.survey.api.controller;
 
-import com.geo.survey.api.dto.RegisterCompanyRequest;
-import com.geo.survey.api.dto.RegisterUserRequest;
-import com.geo.survey.api.dto.UserDto;
+import com.geo.survey.api.dto.*;
 import com.geo.survey.api.mapper.AccountApiMapper;
 import com.geo.survey.domain.model.Company;
 import com.geo.survey.domain.model.User;
@@ -54,6 +52,17 @@ public class AccountController {
     }
 
     @IsAdmin
+    @PatchMapping("/users/{email}/role")
+    public ResponseEntity<Void> changeRole(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable String email,
+            @RequestBody ChangeRoleRequest request
+    ) {
+        accountManager.changeRole(email, userDetails.getCompanyId(), request.role());
+        return ResponseEntity.noContent().build();
+    }
+
+    @IsAdmin
     @GetMapping("/users/{email}")
     public ResponseEntity<UserDto> getUserByEmail(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -70,6 +79,16 @@ public class AccountController {
     ) {
         UserSummary user = accountManager.getUserSummary(userDetails.getUserId());
         return ResponseEntity.ok(mapper.toUserDto(user));
+    }
+
+    @IsAdminOrSurveyor
+    @PatchMapping("/users/me/password")
+    public ResponseEntity<Void> changeMyPassword(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody ChangePasswordRequest request
+    ) {
+        accountManager.changePassword(userDetails.getUserId(), request.oldPassword(), request.newPassword());
+        return ResponseEntity.noContent().build();
     }
 
     @IsSuperAdmin
