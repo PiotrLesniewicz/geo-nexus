@@ -1,9 +1,11 @@
 package com.geo.survey.api.mapper;
 
 import com.geo.survey.api.dto.CreateJobRequest;
+import com.geo.survey.api.dto.JobListItemDto;
 import com.geo.survey.api.dto.JobResponse;
 import com.geo.survey.api.dto.LevelingReportResponse;
 import com.geo.survey.domain.model.Job;
+import com.geo.survey.domain.model.JobListItem;
 import com.geo.survey.domain.model.LevelingReport;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -42,4 +44,6 @@ public interface JobApiMapper {
 
     @Mapping(target = "jobIdentifier", source = "job.jobIdentifier")
     LevelingReportResponse toLevelingReportResponse(LevelingReport report);
+
+    JobListItemDto toListItemDto(JobListItem jobListItem);
 }

@@ -1,10 +1,7 @@
 package com.geo.survey.integration;
 
 import com.geo.survey.domain.exception.BusinessRuleViolationException;
-import com.geo.survey.domain.model.Job;
-import com.geo.survey.domain.model.LevelingReport;
-import com.geo.survey.domain.model.LevelingStation;
-import com.geo.survey.domain.model.StatusJob;
+import com.geo.survey.domain.model.*;
 import com.geo.survey.domain.service.JobSurveyManager;
 import com.geo.survey.math.value.LevelingType;
 import com.geo.survey.testconfig.TestContainerConfig;
@@ -48,6 +45,7 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
 
     private static final String JOB_IDENTIFIER = "JOB-2024-001"; // from test_data_job_leveling.sql
     private static final Long COMPANY_ID = 1L; // from test_data_job_leveling.sql
+    private static final Long USER_ID_1 = 1L; // from test_data_job_leveling.sql
     private static final Double START_H = 100.000;
     private static final Double END_H = 100.500;
 
@@ -63,22 +61,19 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
     @Test
     void shouldCreateJob_withCompanyAndUser() {
         // given
-        Long companyId = 1L; // from test_data_job_leveling.sql
-        Long userId = 1L;    // from test_data_job_leveling.sql
-
         Job job = Job.builder()
                 .jobIdentifier("JOB-2024-NEW")
                 .description("New test measurement")
                 .build();
 
         // when
-        Job result = jobSurveyManager.createJob(job, companyId, userId);
+        Job result = jobSurveyManager.createJob(job, COMPANY_ID, USER_ID_1);
 
         // then
         assertThat(result.getId()).isNotNull();
         assertThat(result.getJobIdentifier()).isEqualTo("JOB-2024-NEW");
-        assertThat(result.getCompany().getId()).isEqualTo(companyId);
-        assertThat(result.getUser().getId()).isEqualTo(userId);
+        assertThat(result.getCompany().getId()).isEqualTo(COMPANY_ID);
+        assertThat(result.getUser().getId()).isEqualTo(USER_ID_1);
         assertThat(result.getStatus()).isEqualTo(StatusJob.OPEN);
         assertThat(result.getCreatedAt()).isNotNull();
     }
@@ -186,7 +181,7 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
         BigDecimal expectedMisclosureFirst = new BigDecimal("0.0020");
         BigDecimal expectedMisclosureSecond = new BigDecimal("-0.0025");
 
-        Pageable pageable = PageRequest.of(0,10);
+        Pageable pageable = PageRequest.of(0, 10);
 
         // when
         LevelingReport firstReport = reportOneWayLeveling(uploadFileFirst, observationTime);
@@ -225,7 +220,6 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
     void shouldThrowException_WhenCreatingJobWithInactiveCompany() {
         // given
         Long inactiveCompanyId = 3L; // TerraMap Biuro Geodezji - active = FALSE from test_data_job_leveling.sql
-        Long userId = 1L;
 
         Job job = Job.builder()
                 .jobIdentifier("JOB-2024-INACTIVE-COMPANY")
@@ -233,7 +227,7 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
                 .build();
 
         // when & then
-        assertThatThrownBy(() -> jobSurveyManager.createJob(job, inactiveCompanyId, userId))
+        assertThatThrownBy(() -> jobSurveyManager.createJob(job, inactiveCompanyId, USER_ID_1))
                 .isInstanceOf(BusinessRuleViolationException.class)
                 .hasMessageContaining("Company is not active");
     }
@@ -261,6 +255,55 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
         ))
                 .isInstanceOf(BusinessRuleViolationException.class)
                 .hasMessageContaining("Job is not open");
+    }
+
+    // get job summary
+
+    @Test
+    void shouldReturnJobSummaryForCompany() {
+        // given
+        Pageable pageable = PageRequest.of(0, 1);
+
+        // when
+        Page<JobListItem> result = jobSurveyManager.getAllJobsForCompany(COMPANY_ID, pageable);
+
+        // then
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getTotalPages()).isEqualTo(2);
+
+        assertThat(result.getContent())
+                .hasSize(1)
+                .doesNotContainNull()
+                .allSatisfy(item -> {
+                    assertThat(item.getJobIdentifier()).isNotNull();
+                    assertThat(item.getCity()).isNotNull();
+                    assertThat(item.getStatus()).isNotNull();
+                    assertThat(item.getCreatedAt()).isNotNull();
+                });
+    }
+
+    @Test
+    void shouldReturnJobSummaryForUser() {
+        // given
+        Pageable pageable = PageRequest.of(0, 1);
+
+        // when
+        Page<JobListItem> result = jobSurveyManager.getAllJobsForUser(USER_ID_1, pageable);
+
+        // then
+
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getTotalPages()).isEqualTo(2);
+
+        assertThat(result.getContent())
+                .hasSize(1)
+                .doesNotContainNull()
+                .allSatisfy(item -> {
+                    assertThat(item.getJobIdentifier()).isNotNull();
+                    assertThat(item.getCity()).isNotNull();
+                    assertThat(item.getStatus()).isNotNull();
+                    assertThat(item.getCreatedAt()).isNotNull();
+                });
     }
 
     // helper

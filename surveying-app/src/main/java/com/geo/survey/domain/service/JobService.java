@@ -4,15 +4,17 @@ import com.geo.survey.domain.exception.BusinessRuleViolationException;
 import com.geo.survey.domain.exception.ResourceNotFoundException;
 import com.geo.survey.domain.model.Company;
 import com.geo.survey.domain.model.Job;
+import com.geo.survey.domain.model.JobListItem;
 import com.geo.survey.domain.model.User;
 import com.geo.survey.infrastructure.database.entity.JobEntity;
 import com.geo.survey.infrastructure.database.repository.JobRepository;
 import com.geo.survey.infrastructure.mapper.JobMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -39,18 +41,14 @@ public class JobService {
                         "Job not found with jobIdentifier: [%s]".formatted(jobIdentifier)));
     }
 
-    public List<Job> getAllByCompany(Long companyId) {
-        return jobRepository.findAllByCompanyId(companyId)
-                .stream()
-                .map(jobMapper::toDomain)
-                .toList();
+    public Page<JobListItem> getAllForCompany(Long companyId, Pageable pageable) {
+        return jobRepository.findAllByCompanyId(companyId, pageable)
+                .map(jobMapper::toListItem);
     }
 
-    public List<Job> getAllByUser(Long userId) {
-        return jobRepository.findAllByUserId(userId)
-                .stream()
-                .map(jobMapper::toDomain)
-                .toList();
+    public Page<JobListItem> getAllForUser(Long userId, Pageable pageable) {
+        return jobRepository.findAllByUserId(userId, pageable)
+                .map(jobMapper::toListItem);
     }
 
     public void delete(Long id) {

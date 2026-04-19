@@ -42,7 +42,9 @@ class JobControllerIntegrationTest extends TestContainerConfig {
     private Clock clock;
 
     private static final String JOB_IDENTIFIER = "JOB-2024-001"; // from test_api_job.sql
-    private static final String TEST_USER_EMAIL = "anna.nowak@geosurvey.pl"; // 'surveyor' from test_api_job.sql
+    private static final String SURVEYOR_EMAIL = "anna.nowak@geosurvey.pl"; // 'surveyor' from test_api_job.sql
+    private static final String ADMIN_EMAIL = "jan.kowalski@geosurvey.pl"; // 'admin' from test_api_job.sql
+
     @BeforeEach
     void setUp() {
         Mockito.when(clock.instant()).thenReturn(Instant.parse("2024-06-15T10:00:00Z"));
@@ -50,7 +52,7 @@ class JobControllerIntegrationTest extends TestContainerConfig {
     }
 
     @Test
-    @WithUserDetails(TEST_USER_EMAIL)
+    @WithUserDetails(SURVEYOR_EMAIL)
     void shouldReturnJob_withCorrectAddress() throws Exception {
 
         mockMvc.perform(get("/api/v1/jobs")
@@ -64,7 +66,7 @@ class JobControllerIntegrationTest extends TestContainerConfig {
     }
 
     @Test
-    @WithUserDetails(TEST_USER_EMAIL)
+    @WithUserDetails(SURVEYOR_EMAIL)
     void shouldProcessOneWayLevelingFile_andReturnReport() throws Exception {
         // given
         MockMultipartFile file = buildMultipartFile("leveling/one_way_10stations.csv", "data.csv");
@@ -88,7 +90,7 @@ class JobControllerIntegrationTest extends TestContainerConfig {
     }
 
     @Test
-    @WithUserDetails(TEST_USER_EMAIL)
+    @WithUserDetails(SURVEYOR_EMAIL)
     void shouldProcessOneWayDoubleLevelingFile_andReturnReport() throws Exception {
         // given
         MockMultipartFile file = buildMultipartFile("leveling/one_way_double_10stations.csv", "data.csv");
@@ -109,7 +111,7 @@ class JobControllerIntegrationTest extends TestContainerConfig {
     }
 
     @Test
-    @WithUserDetails(TEST_USER_EMAIL)
+    @WithUserDetails(SURVEYOR_EMAIL)
     void shouldProcessLevelingFile_withoutStartAndEndH() throws Exception {
         // given
         MockMultipartFile file = buildMultipartFile("leveling/one_way_10stations.csv", "data.csv");
@@ -127,7 +129,7 @@ class JobControllerIntegrationTest extends TestContainerConfig {
     }
 
     @Test
-    @WithUserDetails(TEST_USER_EMAIL)
+    @WithUserDetails(SURVEYOR_EMAIL)
     void shouldReturnReports_afterProcessingTwoFiles() throws Exception {
         // given
         MockMultipartFile fileOne = buildMultipartFile("leveling/one_way_10stations.csv", "one.csv");
@@ -162,7 +164,7 @@ class JobControllerIntegrationTest extends TestContainerConfig {
     }
 
     @Test
-    @WithUserDetails(TEST_USER_EMAIL)
+    @WithUserDetails(SURVEYOR_EMAIL)
     void shouldReturn409_whenProcessingFileForClosedJob() throws Exception {
         // given
         String closedJobId = "JOB-2024-CLOSED"; // closed job from test_api_job.sql
@@ -178,7 +180,7 @@ class JobControllerIntegrationTest extends TestContainerConfig {
     }
 
     @Test
-    @WithUserDetails(TEST_USER_EMAIL)
+    @WithUserDetails(SURVEYOR_EMAIL)
     void shouldReturn404_whenProcessingFileForNonExistentJob() throws Exception {
         // given
         MockMultipartFile file = buildMultipartFile("leveling/one_way_10stations.csv", "data.csv");
@@ -190,6 +192,71 @@ class JobControllerIntegrationTest extends TestContainerConfig {
                         .param("type", LevelingType.ONE_WAY.name())
                         .param("observationTime", "2024-06-15T08:30:00+00:00"))
                 .andExpect(status().isNotFound());
+    }
+
+    // get all jobs item for company/user
+
+    @Test
+    @WithUserDetails(SURVEYOR_EMAIL)
+    void shouldReturnCompanyJobs() throws Exception {
+        mockMvc.perform(get("/api/v1/jobs/company"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(7))
+                .andExpect(jsonPath("$.content[0].jobIdentifier").isNotEmpty())
+                .andExpect(jsonPath("$.content[0].city").isNotEmpty())
+                .andExpect(jsonPath("$.content[0].status").isNotEmpty());
+    }
+
+    @Test
+    @WithUserDetails(ADMIN_EMAIL)
+    void shouldReturnUserJobs() throws Exception {
+        mockMvc.perform(get("/api/v1/jobs/user"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(7))
+                .andExpect(jsonPath("$.content[0].jobIdentifier").isNotEmpty())
+                .andExpect(jsonPath("$.content[0].city").isNotEmpty());
+    }
+
+    @Test
+    @WithUserDetails(SURVEYOR_EMAIL)
+    void shouldSupportPagination_withValidPageAndSize() throws Exception {
+        mockMvc.perform(get("/api/v1/jobs/company")
+                        .param("page", "0")
+                        .param("size", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.totalElements").value(7))
+                .andExpect(jsonPath("$.totalPages").value(4));
+    }
+
+    @Test
+    @WithUserDetails(SURVEYOR_EMAIL)
+    void shouldLimitSize_toMaximum50() throws Exception {
+        mockMvc.perform(get("/api/v1/jobs/company")
+                        .param("page", "0")
+                        .param("size", "100"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(7));
+    }
+
+    @Test
+    @WithUserDetails(ADMIN_EMAIL)
+    void shouldReturnEmptyPage_whenNoJobsExist() throws Exception {
+        mockMvc.perform(get("/api/v1/jobs/user")
+                        .param("page", "10")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(0))
+                .andExpect(jsonPath("$.totalElements").value(7));
+    }
+
+    @Test
+    @WithUserDetails(SURVEYOR_EMAIL)
+    void shouldReturnCompanyJobsSortedByIdDesc() throws Exception {
+        mockMvc.perform(get("/api/v1/jobs/company"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].jobIdentifier").value("TEST-JOB-005"))
+                .andExpect(jsonPath("$.content[1].jobIdentifier").value("TEST-JOB-004"));
     }
 
     // helper

@@ -41,5 +41,15 @@ VALUES ('JOB-2024-001', 'ul. Polna', '5', '00-100', 'Warszawa', 'Polska',
        ('JOB-2024-002', 'ul. Leśna', '12A', '30-200', 'Kraków', 'Polska',
         'OPEN', 'Niwelacja dwustronna - test', '2024-06-10T09:00:00Z', 2, 2),
        ('JOB-2024-CLOSED', 'ul. Zamknięta', '99', '00-999', 'Warszawa', 'Polska',
-        'CLOSED', 'Niwelacja - job zamknięty', '2024-05-01T08:00:00Z', 1, 1);
+        'CLOSED', 'Niwelacja - job zamknięty', '2024-05-01T08:00:00Z', 1, 1),
+       ('TEST-JOB-001', 'ul. Testowa', '1', '00-001', 'Warszawa', 'Polska',
+        'OPEN', 'Test job 1', '2024-06-01T08:00:00Z', 1, 1),
+       ('TEST-JOB-002', 'ul. Testowa', '2', '00-002', 'Warszawa', 'Polska',
+        'OPEN', 'Test job 2', '2024-06-02T08:00:00Z', 1, 1),
+       ('TEST-JOB-003', 'ul. Testowa', '3', '00-003', 'Warszawa', 'Polska',
+        'OPEN', 'Test job 3', '2024-06-03T08:00:00Z', 1, 1),
+       ('TEST-JOB-004', 'ul. Testowa', '4', '00-004', 'Warszawa', 'Polska',
+        'OPEN', 'Test job 4', '2024-06-04T08:00:00Z', 1, 1),
+       ('TEST-JOB-005', 'ul. Testowa', '5', '00-005', 'Warszawa', 'Polska',
+        'OPEN', 'Test job 5', '2024-06-05T08:00:00Z', 1, 1);
 

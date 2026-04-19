@@ -1,11 +1,9 @@
 package com.geo.survey.api.controller;
 
-import com.geo.survey.api.dto.CreateJobRequest;
-import com.geo.survey.api.dto.JobResponse;
-import com.geo.survey.api.dto.LevelingReportResponse;
-import com.geo.survey.api.dto.LevelingUploadRequest;
+import com.geo.survey.api.dto.*;
 import com.geo.survey.api.mapper.JobApiMapper;
 import com.geo.survey.domain.model.Job;
+import com.geo.survey.domain.model.JobListItem;
 import com.geo.survey.domain.model.LevelingReport;
 import com.geo.survey.domain.service.JobSurveyManager;
 import com.geo.survey.infrastructure.security.CustomUserDetails;
@@ -14,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -76,9 +75,34 @@ public class JobController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        Pageable pageable = PageRequest.of(page, size);
+        int safeSize = Math.min(size, 50);
+        Pageable pageable = PageRequest.of(page, safeSize, Sort.by("id").ascending());
         Page<LevelingReport> reports = jobSurveyManager
                 .findLevelingReports(jobIdentifier, userDetails.getCompanyId(), pageable);
         return ResponseEntity.ok(reports.map(mapper::toLevelingReportResponse));
+    }
+
+    @GetMapping("/company")
+    public ResponseEntity<Page<JobListItemDto>> getJobsForCompany(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        int safeSize = Math.min(size, 50);
+        Pageable pageable = PageRequest.of(page, safeSize, Sort.by("id").descending());
+        Page<JobListItem> jobs = jobSurveyManager.getAllJobsForCompany(userDetails.getCompanyId(), pageable);
+        return ResponseEntity.ok(jobs.map(mapper::toListItemDto));
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<Page<JobListItemDto>> getJobsForUser(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        int safeSize = Math.min(size, 50);
+        Pageable pageable = PageRequest.of(page, safeSize, Sort.by("id").descending());
+        Page<JobListItem> jobs = jobSurveyManager.getAllJobsForUser(userDetails.getUserId(), pageable);
+        return ResponseEntity.ok(jobs.map(mapper::toListItemDto));
     }
 }

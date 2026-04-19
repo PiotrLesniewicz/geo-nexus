@@ -1,18 +1,19 @@
 package com.geo.survey.infrastructure.database.repository;
 
 import com.geo.survey.infrastructure.database.entity.JobEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface JobRepository extends JpaRepository<JobEntity, Long> {
     boolean existsByJobIdentifier(String jobIdentifier);
 
-    List<JobEntity> findAllByCompanyId(Long companyId);
+    Page<JobEntity> findAllByCompanyId(Long companyId, Pageable pageable);
 
-    List<JobEntity> findAllByUserId(Long userId);
+    Page<JobEntity> findAllByUserId(Long userId, Pageable pageable);
 
     @EntityGraph(attributePaths = {"company", "user"})
     Optional<JobEntity> findByJobIdentifierAndCompanyId(String jobIdentifier, Long companyId);

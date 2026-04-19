@@ -62,4 +62,12 @@ public class JobSurveyManager {
     public Page<LevelingReport> findLevelingReports(String jobIdentifier, Long companyId, Pageable pageable) {
         return levelingService.findLevelingReports(jobIdentifier, companyId, pageable);
     }
+
+    public Page<JobListItem> getAllJobsForCompany(Long companyId, Pageable pageable) {
+        return jobService.getAllForCompany(companyId, pageable);
+    }
+
+    public Page<JobListItem> getAllJobsForUser(Long userId, Pageable pageable) {
+        return jobService.getAllForUser(userId, pageable);
+    }
 }
