@@ -7,6 +7,7 @@ import com.geo.survey.domain.model.JobListItem;
 import com.geo.survey.domain.model.LevelingReport;
 import com.geo.survey.domain.service.JobSurveyManager;
 import com.geo.survey.infrastructure.security.CustomUserDetails;
+import com.geo.survey.infrastructure.security.annotation.IsAdmin;
 import com.geo.survey.infrastructure.security.annotation.IsAdminOrSurveyor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -49,6 +50,21 @@ public class JobController {
         Long companyId = userDetails.getCompanyId();
         Job job = jobSurveyManager.findJobByIdentifier(companyId, jobIdentifier);
         return ResponseEntity.ok(mapper.toJobResponse(job));
+    }
+
+    @IsAdmin
+    @DeleteMapping
+    public ResponseEntity<Void> deleteJob(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody DeleteJobRequest request
+    ) {
+        jobSurveyManager.delete(
+                userDetails.getCompanyId(),
+                userDetails.getUserId(),
+                request.password(),
+                request.jobIdentifier()
+        );
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping(value = "/leveling", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -105,4 +121,6 @@ public class JobController {
         Page<JobListItem> jobs = jobSurveyManager.getAllJobsForUser(userDetails.getUserId(), pageable);
         return ResponseEntity.ok(jobs.map(mapper::toListItemDto));
     }
+
+
 }

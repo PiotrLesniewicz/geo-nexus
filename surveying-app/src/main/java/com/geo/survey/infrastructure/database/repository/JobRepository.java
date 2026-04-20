@@ -5,6 +5,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.Optional;
 
@@ -21,4 +23,12 @@ public interface JobRepository extends JpaRepository<JobEntity, Long> {
     int countByUserId(Long userId);
 
     int countOpenByUserId(Long userId);
+
+    @Modifying
+    @Query("""
+            delete from JobEntity j
+            where j.jobIdentifier = :jobIdentifier
+            and j.company.id = :companyId"""
+    )
+    int deleteByJobIdentifierAndCompanyId(String jobIdentifier, Long companyId);
 }

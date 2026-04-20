@@ -21,6 +21,17 @@ VALUES (1, 'jan.kowalski@geosurvey.pl', 'Jan', 'Kowalski', 'ADMIN', TRUE, '2020-
        (3, 'ula.zawada@geodeta.pl', 'Ula', 'Zawada', 'ADMIN', FALSE, '2021-04-01T10:00:00Z', '2023-10-20T12:00:00Z');
 
 -- =========================
+-- Test data: User auth
+-- =========================
+-- Password for all users: password123 (BCrypt encoded)
+
+INSERT INTO user_auth (user_id, password_hash, password_changed_at, must_change, created_at)
+VALUES (1, '$2a$10$TMtwxRKGKWNEt4HyySlU..t/F1GhqpQ3beaO9XjBimcGx81X2I8mu', '2020-02-01T08:00:00Z', FALSE, '2020-02-01T08:00:00Z'),
+       (2, '$2a$10$TMtwxRKGKWNEt4HyySlU..t/F1GhqpQ3beaO9XjBimcGx81X2I8mu', '2020-02-05T08:00:00Z', FALSE, '2020-02-05T08:00:00Z'),
+       (3, '$2a$10$TMtwxRKGKWNEt4HyySlU..t/F1GhqpQ3beaO9XjBimcGx81X2I8mu', '2021-04-01T10:00:00Z', FALSE, '2021-04-01T10:00:00Z'),
+       (4, '$2a$10$TMtwxRKGKWNEt4HyySlU..t/F1GhqpQ3beaO9XjBimcGx81X2I8mu', '2021-04-01T10:00:00Z', FALSE, '2021-04-01T10:00:00Z');
+
+-- =========================
 -- Test data: Job
 -- =========================
 
@@ -30,6 +41,16 @@ VALUES ('JOB-2024-001', 'ul. Polna', '5', '00-100', 'Warszawa', 'Polska',
         'OPEN', 'Niwelacja terenu - test', '2024-06-01T08:00:00Z', 1, 1),
        ('JOB-2024-002', 'ul. Leśna', '12A', '30-200', 'Kraków', 'Polska',
         'OPEN', 'Niwelacja dwustronna - test', '2024-06-10T09:00:00Z', 2, 2),
-        ('JOB-2024-CLOSED', 'ul. Zamknięta', '99', '00-999', 'Warszawa', 'Polska',
-        'CLOSED', 'Niwelacja - job zamknięty', '2024-05-01T08:00:00Z', 1, 1);
+       ('JOB-2024-CLOSED', 'ul. Zamknięta', '99', '00-999', 'Warszawa', 'Polska',
+        'CLOSED', 'Niwelacja - job zamknięty', '2024-05-01T08:00:00Z', 1, 1),
+       ('TEST-JOB-001', 'ul. Testowa', '1', '00-001', 'Warszawa', 'Polska',
+        'OPEN', 'Test job 1', '2024-06-01T08:00:00Z', 1, 1),
+       ('TEST-JOB-002', 'ul. Testowa', '2', '00-002', 'Warszawa', 'Polska',
+        'OPEN', 'Test job 2', '2024-06-02T08:00:00Z', 1, 1),
+       ('TEST-JOB-003', 'ul. Testowa', '3', '00-003', 'Warszawa', 'Polska',
+        'OPEN', 'Test job 3', '2024-06-03T08:00:00Z', 1, 1),
+       ('TEST-JOB-004', 'ul. Testowa', '4', '00-004', 'Warszawa', 'Polska',
+        'OPEN', 'Test job 4', '2024-06-04T08:00:00Z', 1, 1),
+       ('TEST-JOB-005', 'ul. Testowa', '5', '00-005', 'Warszawa', 'Polska',
+        'OPEN', 'Test job 5', '2024-06-05T08:00:00Z', 1, 1);
 

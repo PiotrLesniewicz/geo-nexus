@@ -2,6 +2,7 @@ package com.geo.survey.domain.service;
 
 import com.geo.survey.domain.exception.BusinessRuleViolationException;
 import com.geo.survey.domain.exception.ParsingException;
+import com.geo.survey.domain.exception.UnauthorizedAccessException;
 import com.geo.survey.domain.model.*;
 import com.geo.survey.math.value.LevelingType;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class JobSurveyManager {
 
     private final CompanyService companyService;
     private final UserService userService;
+    private final UserAuthService userAuthService;
     private final JobService jobService;
     private final LevelingService levelingService;
 
@@ -69,5 +71,13 @@ public class JobSurveyManager {
 
     public Page<JobListItem> getAllJobsForUser(Long userId, Pageable pageable) {
         return jobService.getAllForUser(userId, pageable);
+    }
+
+    @Transactional
+    public void delete(Long companyId, Long userId, String password, String jobIdentifier) {
+        if (!userAuthService.verifyPassword(userId, password)) {
+            throw new UnauthorizedAccessException("Incorrect current password");
+        }
+        jobService.delete(jobIdentifier, companyId);
     }
 }

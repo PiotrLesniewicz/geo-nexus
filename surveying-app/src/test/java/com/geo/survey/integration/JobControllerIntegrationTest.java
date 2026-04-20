@@ -1,5 +1,7 @@
 package com.geo.survey.integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.geo.survey.api.dto.DeleteJobRequest;
 import com.geo.survey.math.value.LevelingType;
 import com.geo.survey.testconfig.TestContainerConfig;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,33 +25,37 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Sql(scripts = {"/db/migration/cleanup.sql", "/db/migration/test_api_job.sql"},
+@Sql(scripts = {"/db/migration/cleanup.sql", "/db/migration/test_data_job_leveling.sql"},
         executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class JobControllerIntegrationTest extends TestContainerConfig {
 
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @MockitoBean
     private Clock clock;
 
-    private static final String JOB_IDENTIFIER = "JOB-2024-001"; // from test_api_job.sql
-    private static final String SURVEYOR_EMAIL = "anna.nowak@geosurvey.pl"; // 'surveyor' from test_api_job.sql
-    private static final String ADMIN_EMAIL = "jan.kowalski@geosurvey.pl"; // 'admin' from test_api_job.sql
+    private static final String JOB_IDENTIFIER = "JOB-2024-001"; // from test_data_job_leveling.sql
+    private static final String SURVEYOR_EMAIL = "anna.nowak@geosurvey.pl"; // 'surveyor' from test_data_job_leveling.sql
+    private static final String ADMIN_EMAIL = "jan.kowalski@geosurvey.pl"; // 'admin' from test_data_job_leveling.sql
 
     @BeforeEach
     void setUp() {
         Mockito.when(clock.instant()).thenReturn(Instant.parse("2024-06-15T10:00:00Z"));
         Mockito.when(clock.getZone()).thenReturn(ZoneOffset.UTC);
     }
+
+    // get job
 
     @Test
     @WithUserDetails(SURVEYOR_EMAIL)
@@ -64,6 +70,8 @@ class JobControllerIntegrationTest extends TestContainerConfig {
                 .andExpect(jsonPath("$.nip").isNotEmpty())
                 .andExpect(jsonPath("$.userName").isNotEmpty());
     }
+
+    // process leveling
 
     @Test
     @WithUserDetails(SURVEYOR_EMAIL)
@@ -167,7 +175,7 @@ class JobControllerIntegrationTest extends TestContainerConfig {
     @WithUserDetails(SURVEYOR_EMAIL)
     void shouldReturn409_whenProcessingFileForClosedJob() throws Exception {
         // given
-        String closedJobId = "JOB-2024-CLOSED"; // closed job from test_api_job.sql
+        String closedJobId = "JOB-2024-CLOSED"; // closed job from test_data_job_leveling.sql
         MockMultipartFile file = buildMultipartFile("leveling/one_way_10stations.csv", "data.csv");
 
         // when, then
@@ -192,6 +200,30 @@ class JobControllerIntegrationTest extends TestContainerConfig {
                         .param("type", LevelingType.ONE_WAY.name())
                         .param("observationTime", "2024-06-15T08:30:00+00:00"))
                 .andExpect(status().isNotFound());
+    }
+
+    // delete
+
+    @Test
+    @WithUserDetails(ADMIN_EMAIL)
+    void shouldCorrectlyDeletedJob() throws Exception {
+        String password = "password123";
+        DeleteJobRequest request = new DeleteJobRequest(password, JOB_IDENTIFIER);
+        mockMvc.perform(delete("/api/v1/jobs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithUserDetails(ADMIN_EMAIL)
+    void shouldThrowException_WhenPasswordIncorrect() throws Exception {
+        String password = "wrong_password";
+        DeleteJobRequest request = new DeleteJobRequest(password, JOB_IDENTIFIER);
+        mockMvc.perform(delete("/api/v1/jobs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
     }
 
     // get all jobs item for company/user

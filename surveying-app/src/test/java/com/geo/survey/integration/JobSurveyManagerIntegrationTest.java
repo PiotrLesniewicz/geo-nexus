@@ -1,6 +1,7 @@
 package com.geo.survey.integration;
 
 import com.geo.survey.domain.exception.BusinessRuleViolationException;
+import com.geo.survey.domain.exception.ResourceNotFoundException;
 import com.geo.survey.domain.model.*;
 import com.geo.survey.domain.service.JobSurveyManager;
 import com.geo.survey.math.value.LevelingType;
@@ -43,9 +44,11 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
     @MockitoBean
     private Clock clock;
 
-    private static final String JOB_IDENTIFIER = "JOB-2024-001"; // from test_data_job_leveling.sql
-    private static final Long COMPANY_ID = 1L; // from test_data_job_leveling.sql
-    private static final Long USER_ID_1 = 1L; // from test_data_job_leveling.sql
+    // data user, company and job from test_data_job_leveling.sql
+    private static final String JOB_IDENTIFIER = "JOB-2024-001";
+    private static final Long COMPANY_ID = 1L;
+    private static final Long USER_ID_1 = 1L;
+
     private static final Double START_H = 100.000;
     private static final Double END_H = 100.500;
 
@@ -262,17 +265,17 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
     @Test
     void shouldReturnJobSummaryForCompany() {
         // given
-        Pageable pageable = PageRequest.of(0, 1);
+        Pageable pageable = PageRequest.of(0, 5);
 
         // when
         Page<JobListItem> result = jobSurveyManager.getAllJobsForCompany(COMPANY_ID, pageable);
 
         // then
-        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getTotalElements()).isEqualTo(7);
         assertThat(result.getTotalPages()).isEqualTo(2);
 
         assertThat(result.getContent())
-                .hasSize(1)
+                .hasSize(5)
                 .doesNotContainNull()
                 .allSatisfy(item -> {
                     assertThat(item.getJobIdentifier()).isNotNull();
@@ -285,18 +288,18 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
     @Test
     void shouldReturnJobSummaryForUser() {
         // given
-        Pageable pageable = PageRequest.of(0, 1);
+        Pageable pageable = PageRequest.of(0, 5);
 
         // when
         Page<JobListItem> result = jobSurveyManager.getAllJobsForUser(USER_ID_1, pageable);
 
         // then
 
-        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getTotalElements()).isEqualTo(7);
         assertThat(result.getTotalPages()).isEqualTo(2);
 
         assertThat(result.getContent())
-                .hasSize(1)
+                .hasSize(5)
                 .doesNotContainNull()
                 .allSatisfy(item -> {
                     assertThat(item.getJobIdentifier()).isNotNull();
@@ -305,6 +308,35 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
                     assertThat(item.getCreatedAt()).isNotNull();
                 });
     }
+
+    // delete job
+
+    @Test
+    void shouldCorrectlyDeleteJob() {
+        // given
+        String password = "password123"; // from test_data_job_leveling.sql
+
+        // when
+        jobSurveyManager.delete(COMPANY_ID, USER_ID_1, password, JOB_IDENTIFIER);
+
+        // then
+        assertThatThrownBy(() -> jobSurveyManager.findJobByIdentifier(COMPANY_ID, JOB_IDENTIFIER))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Job not found");
+
+    }
+
+    @Test
+    void shouldThrowException_WhenDeletingJobNonExistent() {
+        // given
+        String password = "password123";
+
+        // when, then
+        assertThatThrownBy(() -> jobSurveyManager.delete(COMPANY_ID, USER_ID_1, password, "NON-EXISTENT-JOB"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Job not found");
+    }
+
 
     // helper
 

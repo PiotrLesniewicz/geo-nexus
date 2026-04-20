@@ -137,17 +137,18 @@ class JobServiceTest {
     @Test
     void shouldThrowException_WhenDeletingNonExistentJob() {
         // given
-        Long jobId = 999L;
+        Long companyId = 999L;
+        String jobIdentifier = "JOB_1117777";
 
-        when(jobRepository.existsById(jobId)).thenReturn(false);
+        when(jobRepository.deleteByJobIdentifierAndCompanyId(jobIdentifier, companyId))
+                .thenReturn(0);
 
         // when & then
-        assertThatThrownBy(() -> jobService.delete(jobId))
+        assertThatThrownBy(() -> jobService.delete(jobIdentifier, companyId))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Job not found")
-                .hasMessageContaining(jobId.toString());
+                .hasMessageContaining(jobIdentifier);
 
-        verify(jobRepository).existsById(jobId);
         verify(jobRepository, never()).deleteById(anyLong());
     }
 

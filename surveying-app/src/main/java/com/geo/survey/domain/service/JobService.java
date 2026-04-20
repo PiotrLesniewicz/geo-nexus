@@ -51,12 +51,11 @@ public class JobService {
                 .map(jobMapper::toListItem);
     }
 
-    public void delete(Long id) {
-        if (!jobRepository.existsById(id)) {
-            throw new ResourceNotFoundException(
-                    "Job not found with id: [%d]".formatted(id));
+    public void delete(String jobIdentifier, Long companyId) {
+        int deleted = jobRepository.deleteByJobIdentifierAndCompanyId(jobIdentifier, companyId);
+        if (deleted == 0) {
+            throw new ResourceNotFoundException("Job not found with id: [%s]".formatted(jobIdentifier));
         }
-        jobRepository.deleteById(id);
     }
 
     public int countByUserId(Long userId) {
