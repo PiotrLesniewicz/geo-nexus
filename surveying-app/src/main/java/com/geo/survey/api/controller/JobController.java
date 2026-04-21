@@ -9,6 +9,9 @@ import com.geo.survey.domain.service.JobSurveyManager;
 import com.geo.survey.infrastructure.security.CustomUserDetails;
 import com.geo.survey.infrastructure.security.annotation.IsAdmin;
 import com.geo.survey.infrastructure.security.annotation.IsAdminOrSurveyor;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,10 +21,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 
+@Validated
 @IsAdminOrSurveyor
 @RestController
 @RequestMapping("/api/v1/jobs")
@@ -34,7 +39,7 @@ public class JobController {
     @PostMapping
     public ResponseEntity<JobResponse> createJob(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody CreateJobRequest request
+            @Valid @RequestBody CreateJobRequest request
     ) {
         Job job = mapper.toJob(request);
         Job created = jobSurveyManager.createJob(job, userDetails.getCompanyId(), userDetails.getUserId());
@@ -45,7 +50,7 @@ public class JobController {
     @GetMapping
     public ResponseEntity<JobResponse> getJobByIdentifier(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam String jobIdentifier
+            @RequestParam @NotBlank String jobIdentifier
     ) {
         Long companyId = userDetails.getCompanyId();
         Job job = jobSurveyManager.findJobByIdentifier(companyId, jobIdentifier);
@@ -56,7 +61,7 @@ public class JobController {
     @DeleteMapping
     public ResponseEntity<Void> deleteJob(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody DeleteJobRequest request
+            @Valid @RequestBody DeleteJobRequest request
     ) {
         jobSurveyManager.delete(
                 userDetails.getCompanyId(),
@@ -70,7 +75,7 @@ public class JobController {
     @PostMapping(value = "/leveling", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<LevelingReportResponse> processLevelingFile(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @ModelAttribute LevelingUploadRequest request
+            @Valid @ModelAttribute LevelingUploadRequest request
     ) {
         LevelingReport levelingReport = jobSurveyManager.processLevelingFile(
                 userDetails.getCompanyId(),
@@ -87,9 +92,9 @@ public class JobController {
     @GetMapping("/leveling")
     public ResponseEntity<Page<LevelingReportResponse>> getLevelingReports(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam String jobIdentifier,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam @NotBlank String jobIdentifier,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int size
     ) {
         int safeSize = Math.min(size, 50);
         Pageable pageable = PageRequest.of(page, safeSize, Sort.by("id").ascending());
@@ -101,8 +106,8 @@ public class JobController {
     @GetMapping("/company")
     public ResponseEntity<Page<JobListItemDto>> getJobsForCompany(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int size
     ) {
         int safeSize = Math.min(size, 50);
         Pageable pageable = PageRequest.of(page, safeSize, Sort.by("id").descending());
@@ -113,14 +118,13 @@ public class JobController {
     @GetMapping("/user")
     public ResponseEntity<Page<JobListItemDto>> getJobsForUser(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int size
     ) {
         int safeSize = Math.min(size, 50);
         Pageable pageable = PageRequest.of(page, safeSize, Sort.by("id").descending());
         Page<JobListItem> jobs = jobSurveyManager.getAllJobsForUser(userDetails.getUserId(), pageable);
         return ResponseEntity.ok(jobs.map(mapper::toListItemDto));
     }
-
 
 }

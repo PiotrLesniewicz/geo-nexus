@@ -207,7 +207,7 @@ class JobControllerIntegrationTest extends TestContainerConfig {
     @Test
     @WithUserDetails(ADMIN_EMAIL)
     void shouldCorrectlyDeletedJob() throws Exception {
-        String password = "password123";
+        String password = "Password123";
         DeleteJobRequest request = new DeleteJobRequest(password, JOB_IDENTIFIER);
         mockMvc.perform(delete("/api/v1/jobs")
                         .contentType(MediaType.APPLICATION_JSON)

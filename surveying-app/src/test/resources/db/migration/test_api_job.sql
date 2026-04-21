@@ -23,12 +23,12 @@ VALUES (1, 'jan.kowalski@geosurvey.pl', 'Jan', 'Kowalski', 'ADMIN', TRUE, '2020-
 -- =========================
 -- Test data: User auth
 -- =========================
-
+-- Password for all users: Password123 (BCrypt encoded)
 INSERT INTO user_auth (user_id, password_hash, password_changed_at, must_change, created_at)
-VALUES (1, '$2a$10$OkFgW0fjN7Sd/gfw2oz5a.y/a8m1HRl6RfmQyZLY/qT/oyx6zIf3y', '2020-02-01T08:00:00Z', FALSE, '2020-02-01T08:00:00Z'),
-       (2, '$2a$10$OkFgW0fjN7Sd/gfw2oz5a.y/a8m1HRl6RfmQyZLY/qT/oyx6zIf3y', '2020-02-05T08:00:00Z', FALSE, '2020-02-05T08:00:00Z'),
-       (3, '$2a$10$OkFgW0fjN7Sd/gfw2oz5a.y/a8m1HRl6RfmQyZLY/qT/oyx6zIf3y', '2021-04-01T10:00:00Z', FALSE, '2021-04-01T10:00:00Z'),
-       (4, '$2a$10$OkFgW0fjN7Sd/gfw2oz5a.y/a8m1HRl6RfmQyZLY/qT/oyx6zIf3y', '2021-04-01T10:00:00Z', FALSE, '2021-04-01T10:00:00Z');
+VALUES (1, '$2a$10$I3IxWVl/ch4pLKDjIW85R.EEti2YTOZuhd30FnPonrA3wjMtNbLUW', '2020-02-01T08:00:00Z', FALSE, '2020-02-01T08:00:00Z'),
+       (2, '$2a$10$I3IxWVl/ch4pLKDjIW85R.EEti2YTOZuhd30FnPonrA3wjMtNbLUW', '2020-02-05T08:00:00Z', FALSE, '2020-02-05T08:00:00Z'),
+       (3, '$2a$10$I3IxWVl/ch4pLKDjIW85R.EEti2YTOZuhd30FnPonrA3wjMtNbLUW', '2021-04-01T10:00:00Z', FALSE, '2021-04-01T10:00:00Z'),
+       (4, '$2a$10$I3IxWVl/ch4pLKDjIW85R.EEti2YTOZuhd30FnPonrA3wjMtNbLUW', '2021-04-01T10:00:00Z', FALSE, '2021-04-01T10:00:00Z');
 
 -- =========================
 -- Test data: Job

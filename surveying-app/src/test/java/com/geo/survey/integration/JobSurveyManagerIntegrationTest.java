@@ -314,7 +314,7 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
     @Test
     void shouldCorrectlyDeleteJob() {
         // given
-        String password = "password123"; // from test_data_job_leveling.sql
+        String password = "Password123"; // from test_data_job_leveling.sql
 
         // when
         jobSurveyManager.delete(COMPANY_ID, USER_ID_1, password, JOB_IDENTIFIER);
@@ -329,7 +329,7 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
     @Test
     void shouldThrowException_WhenDeletingJobNonExistent() {
         // given
-        String password = "password123";
+        String password = "Password123";
 
         // when, then
         assertThatThrownBy(() -> jobSurveyManager.delete(COMPANY_ID, USER_ID_1, password, "NON-EXISTENT-JOB"))

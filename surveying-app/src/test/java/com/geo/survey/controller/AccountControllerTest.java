@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -252,6 +253,7 @@ class AccountControllerTest {
 
     @Test
     void shouldReturn200_whenAdminGetsUserByEmail() throws Exception {
+        System.out.println(new BCryptPasswordEncoder().encode("Password123"));
         // given
         CustomUserDetails userDetails = getAdminUserDetails();
         String email = "anna@geo.pl";
@@ -527,7 +529,11 @@ class AccountControllerTest {
 
     private static RegisterUserRequest newRegisterUser() {
         return new RegisterUserRequest(
-                "anna@geo.pl", "Anna", "Nowak", Role.SURVEYOR, "haslo123"
+                "anna@geo.pl",
+                "Anna",
+                "Nowak",
+                Role.SURVEYOR,
+                "hasloHaslo123"
         );
     }
 
@@ -544,7 +550,7 @@ class AccountControllerTest {
                 .adminEmail("jan@geo.pl")
                 .adminName("Jan")
                 .adminSurname("Kowalski")
-                .password("tajnehaslo")
+                .password("tajneHaslo123")
                 .build();
     }
 }

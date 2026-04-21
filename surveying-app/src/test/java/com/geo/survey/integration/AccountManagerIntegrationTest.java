@@ -478,7 +478,7 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
     void shouldChangePassword() {
         // given
         Long userId = 2L; // anna.nowak from test_data_account.sql
-        String password = "password123";
+        String password = "Password123";
         String newPassword = "newSecurePass456";
 
         // when

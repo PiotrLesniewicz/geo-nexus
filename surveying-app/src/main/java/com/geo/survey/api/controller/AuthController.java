@@ -4,6 +4,7 @@ import com.geo.survey.api.dto.LoginRequestDto;
 import com.geo.survey.api.dto.LoginResponseDto;
 import com.geo.survey.infrastructure.security.CustomUserDetails;
 import com.geo.survey.infrastructure.security.JwtService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,7 +24,9 @@ public class AuthController {
     private final JwtService jwtService;
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto request) {
+    public ResponseEntity<LoginResponseDto> login(
+            @Valid @RequestBody LoginRequestDto request
+    ) {
 
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())

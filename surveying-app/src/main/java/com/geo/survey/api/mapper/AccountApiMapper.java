@@ -2,7 +2,7 @@ package com.geo.survey.api.mapper;
 
 import com.geo.survey.api.dto.RegisterCompanyRequest;
 import com.geo.survey.api.dto.RegisterUserRequest;
-import com.geo.survey.api.dto.UserDto;
+import com.geo.survey.api.dto.UserResponseDto;
 import com.geo.survey.domain.model.Company;
 import com.geo.survey.domain.model.User;
 import com.geo.survey.domain.model.UserSummary;
@@ -54,5 +54,5 @@ public interface AccountApiMapper {
     @Mapping(target = "deletedAt",  source = "user.deletedAt")
     @Mapping(target = "countJob",   source = "countJob")
     @Mapping(target = "openJob",    source = "openJob")
-    UserDto toUserDto(UserSummary user);
+    UserResponseDto toUserDto(UserSummary user);
 }

@@ -4,7 +4,7 @@ import com.geo.survey.domain.model.Role;
 
 import java.time.OffsetDateTime;
 
-public record UserDto(
+public record UserResponseDto(
         String email,
         String name,
         String surname,
