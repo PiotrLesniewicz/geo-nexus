@@ -6,6 +6,7 @@ plugins {
 val mapstructVersion: String by project
 val lombokBindingVersion: String by project
 val jsonWebTokenVersion: String by project
+val swaggerUIVersion: String by project
 
 configurations {
     compileOnly {
@@ -26,6 +27,7 @@ dependencies {
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("org.mapstruct:mapstruct:$mapstructVersion")
     implementation("io.jsonwebtoken:jjwt-api:$jsonWebTokenVersion")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$swaggerUIVersion")
 
     // 3. Compile Only (Lombok)
     compileOnly("org.projectlombok:lombok")
@@ -55,11 +57,13 @@ dependencies {
 }
 
 tasks.withType<JavaCompile> {
-    options.compilerArgs.addAll(listOf(
-        "-Amapstruct.defaultComponentModel=spring",
-        "-Amapstruct.unmappedTargetPolicy=IGNORE",
-        "-Amapstruct.defaultInjectionStrategy=constructor"
-    ))
+    options.compilerArgs.addAll(
+        listOf(
+            "-Amapstruct.defaultComponentModel=spring",
+            "-Amapstruct.unmappedTargetPolicy=IGNORE",
+            "-Amapstruct.defaultInjectionStrategy=constructor"
+        )
+    )
 }
 
 tasks.withType<Test>().configureEach {
