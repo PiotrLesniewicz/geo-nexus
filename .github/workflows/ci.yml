@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [ "master"]
+  pull_request:
+    branches: [ "master"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build and Verify
+        run: ./gradlew build jacocoTestCoverageVerification
+
+      - name: Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            surveying-app/build/reports/tests/test
+            surveying-app/build/reports/jacoco/test/html
+            surveying-math/build/reports/tests/test
+            surveying-math/build/reports/jacoco/test/html
