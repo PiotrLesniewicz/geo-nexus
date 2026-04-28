@@ -16,6 +16,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -501,6 +505,122 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
         assertThatThrownBy(() -> accountManager.changePassword(userId, wrongPassword, newPassword))
                 .isInstanceOf(UnauthorizedAccessException.class)
                 .hasMessageContaining("Incorrect current password");
+    }
+
+    // tests for get company by nip
+
+    @Test
+    void shouldGetCompanyByNip() {
+        // given
+        String nip = "1234567890"; // GeoSurvey — active from test_data_account.sql
+
+        // when
+        Company company = accountManager.getCompany(nip);
+
+        // then
+        assertThat(company).isNotNull()
+                .returns(nip, Company::getNip)
+                .returns(true, Company::isActive);
+    }
+
+    @Test
+    void shouldThrowException_WhenGettingCompanyWithNonExistentNip() {
+        // given
+        String nonExistentNip = "9999999999";
+
+        // when, then
+        assertThatThrownBy(() -> accountManager.getCompany(nonExistentNip))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining(nonExistentNip);
+    }
+
+    @Test
+    void shouldReturnBlockedCompany_WhenGettingByNip() {
+        // given
+        String nip = "1122334455"; // TerraMap — blocked from test_data_account.sql
+
+        // when
+        Company company = accountManager.getCompany(nip);
+
+        // then — getCompany nie filtruje po statusie, zwraca bez względu na active
+        assertThat(company).isNotNull();
+        assertThat(company.getNip()).isEqualTo(nip);
+        assertThat(company.isActive()).isFalse();
+    }
+
+// tests for get companies paginated
+
+    @Test
+    void shouldReturnPagedCompanies() {
+        // given
+        Pageable pageable = PageRequest.of(0, 1, Sort.by("id").ascending());
+
+        // when
+        Page<Company> result = accountManager.getCompanies(pageable);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getTotalElements()).isGreaterThan(0);
+        assertThat(result.getContent()).isNotEmpty();
+    }
+
+    @Test
+    void shouldReturnCorrectPageSize() {
+        // given
+        int pageSize = 2;
+        Pageable pageable = PageRequest.of(0, pageSize, Sort.by("id").ascending());
+
+        // when
+        Page<Company> result = accountManager.getCompanies(pageable);
+
+        // then
+        assertThat(result.getContent()).hasSizeLessThanOrEqualTo(pageSize);
+        assertThat(result.getSize()).isEqualTo(pageSize);
+    }
+
+    @Test
+    void shouldReturnCorrectPage_WhenRequestingSecondPage() {
+        // given
+        Pageable firstPage = PageRequest.of(0, 1, Sort.by("id").ascending());
+        Pageable secondPage = PageRequest.of(1, 1, Sort.by("id").ascending());
+
+        // when
+        Page<Company> first = accountManager.getCompanies(firstPage);
+        Page<Company> second = accountManager.getCompanies(secondPage);
+
+        // then
+        assertThat(first.getContent()).isNotEmpty();
+        assertThat(second.getContent()).isNotEmpty();
+        assertThat(first.getContent().getFirst().getId())
+                .isNotEqualTo(second.getContent().getFirst().getId());
+    }
+
+    @Test
+    void shouldReturnEmptyPage_WhenPageNumberExceedsTotalPages() {
+        // given
+        Pageable pageable = PageRequest.of(999, 10, Sort.by("id").ascending());
+
+        // when
+        Page<Company> result = accountManager.getCompanies(pageable);
+
+        // then
+        assertThat(result.getContent()).isEmpty();
+        assertThat(result.getTotalElements()).isGreaterThan(0);
+    }
+
+    @Test
+    void shouldReturnAllCompaniesIncludingBlocked() {
+        // given
+        Pageable pageable = PageRequest.of(0, 50, Sort.by("id").ascending());
+
+        // when
+        Page<Company> result = accountManager.getCompanies(pageable);
+
+        // then
+        boolean hasActive = result.getContent().stream().anyMatch(Company::isActive);
+        boolean hasInactive = result.getContent().stream().anyMatch(c -> !c.isActive());
+        assertThat(hasActive).isTrue();
+        assertThat(hasInactive).isTrue();
     }
 
 }

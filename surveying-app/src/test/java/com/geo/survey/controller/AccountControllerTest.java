@@ -9,6 +9,7 @@ import com.geo.survey.api.dto.RegisterUserRequest;
 import com.geo.survey.api.mapper.AccountApiMapperImpl;
 import com.geo.survey.domain.exception.BusinessRuleViolationException;
 import com.geo.survey.domain.exception.ResourceNotFoundException;
+import com.geo.survey.domain.model.Company;
 import com.geo.survey.domain.model.Role;
 import com.geo.survey.domain.model.User;
 import com.geo.survey.domain.model.UserSummary;
@@ -18,9 +19,13 @@ import com.geo.survey.infrastructure.security.CustomUserDetailsService;
 import com.geo.survey.infrastructure.security.JwtService;
 import com.geo.survey.testconfig.SecurityTestConfiguration;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -28,7 +33,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -464,7 +471,187 @@ class AccountControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-// helpers
+    // getCompany by NIP
+
+    @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
+    void shouldReturn200_whenSuperAdminGetsCompanyByNip() throws Exception {
+        // given
+        String nip = "1234567890";
+        Company company = getCompany();
+
+        when(accountManager.getCompany(nip)).thenReturn(company);
+
+        // when, then
+        mockMvc.perform(get("/api/v1/companies/{nip}", nip))
+                .andExpect(status().isOk());
+
+        verify(accountManager).getCompany(nip);
+    }
+
+    @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
+    void shouldReturn404_whenSuperAdminGetsNonExistentCompany() throws Exception {
+        // given
+        String nip = "9999999999";
+
+        doThrow(new ResourceNotFoundException("Company with nip [%s] does not exist".formatted(nip)))
+                .when(accountManager).getCompany(nip);
+
+        // when, then
+        mockMvc.perform(get("/api/v1/companies/{nip}", nip))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
+    void shouldReturn400_whenNipHasInvalidFormat() throws Exception {
+        String invalidNip = "1234567"; // too short
+
+        // when, then
+        mockMvc.perform(get("/api/v1/companies/{nip}", invalidNip))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(accountManager);
+    }
+
+    @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
+    void shouldReturn400_whenNipContainsLetters() throws Exception {
+        // given
+        String invalidNip = "12345678AB";
+
+        // when, then
+        mockMvc.perform(get("/api/v1/companies/{nip}", invalidNip))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(accountManager);
+    }
+
+    @Test
+    void shouldReturn403_whenAdminTriesToGetCompanyByNip() throws Exception {
+        // given
+        CustomUserDetails userDetails = getAdminUserDetails();
+        String nip = "1234567890";
+
+        // when, then
+        mockMvc.perform(get("/api/v1/companies/{nip}", nip)
+                        .with(user(userDetails)))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(accountManager);
+    }
+
+    @Test
+    void shouldReturn401_whenGettingCompanyByNipWithoutAuthentication() throws Exception {
+        mockMvc.perform(get("/api/v1/companies/1234567890"))
+                .andExpect(status().isUnauthorized());
+    }
+
+// getCompanies (paginated)
+
+    @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
+    void shouldReturn200_whenSuperAdminGetsCompanies() throws Exception {
+        // given
+        Page<Company> page = new PageImpl<>(List.of(getCompany()));
+
+        when(accountManager.getCompanies(any(Pageable.class))).thenReturn(page);
+
+        // when, then
+        mockMvc.perform(get("/api/v1/companies")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk());
+
+        verify(accountManager).getCompanies(any(Pageable.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
+    void shouldReturn200_withDefaultPaginationParams() throws Exception {
+        // given
+        Page<Company> page = new PageImpl<>(List.of());
+
+        when(accountManager.getCompanies(any(Pageable.class))).thenReturn(page);
+
+        mockMvc.perform(get("/api/v1/companies"))
+                .andExpect(status().isOk());
+
+        verify(accountManager).getCompanies(any(Pageable.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
+    void shouldCapSizeAt50_whenSizeExceedsLimit() throws Exception {
+        // given
+        Page<Company> page = new PageImpl<>(List.of());
+        when(accountManager.getCompanies(any(Pageable.class))).thenReturn(page);
+
+        // when, then
+        mockMvc.perform(get("/api/v1/companies")
+                        .param("page", "0")
+                        .param("size", "100"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(accountManager).getCompanies(pageableCaptor.capture());
+        assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(50);
+    }
+
+    @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
+    void shouldReturn400_whenPageIsNegative() throws Exception {
+        // when, then
+        mockMvc.perform(get("/api/v1/companies")
+                        .param("page", "-1")
+                        .param("size", "10"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(accountManager);
+    }
+
+    @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
+    void shouldReturn400_whenSizeIsZero() throws Exception {
+        // when, then
+        mockMvc.perform(get("/api/v1/companies")
+                        .param("page", "0")
+                        .param("size", "0"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(accountManager);
+    }
+
+    @Test
+    void shouldReturn403_whenAdminTriesToGetCompanies() throws Exception {
+        // given
+        CustomUserDetails userDetails = getAdminUserDetails();
+
+        // when, then
+        mockMvc.perform(get("/api/v1/companies")
+                        .with(user(userDetails)))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(accountManager);
+    }
+
+    @Test
+    void shouldReturn401_whenGettingCompaniesWithoutAuthentication() throws Exception {
+        mockMvc.perform(get("/api/v1/companies"))
+                .andExpect(status().isUnauthorized());
+    }
+
+// helper
+
+    private static Company getCompany() {
+        return Company.builder()
+                .id(1L)
+                .name("GeoSurvey")
+                .nip("1234567890")
+                .active(true)
+                .build();
+    }
 
     private static ChangePasswordRequest changePassword() {
         return new ChangePasswordRequest(

@@ -7,6 +7,8 @@ import com.geo.survey.domain.model.Role;
 import com.geo.survey.domain.model.User;
 import com.geo.survey.domain.model.UserSummary;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -104,6 +106,16 @@ public class AccountManager {
         int countJob = jobService.countByUserId(user.getId());
         int openJob = jobService.countOpenByUserId(user.getId());
         return buildUserSummary(user, countJob, openJob);
+    }
+
+    @Transactional
+    public Company getCompany(String nip) {
+        return companyService.findByNip(nip);
+    }
+
+    @Transactional
+    public Page<Company> getCompanies(Pageable pageable) {
+        return companyService.getCompanies(pageable);
     }
 
     private static void assertUserIsNotSuperAdmin(User user) {

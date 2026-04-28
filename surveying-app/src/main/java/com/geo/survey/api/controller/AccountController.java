@@ -14,9 +14,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -128,6 +133,41 @@ public class AccountController {
     ) {
         accountManager.changePassword(userDetails.getUserId(), request.oldPassword(), request.newPassword());
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "Get company by NIP",
+            description = """
+                    Returns a single company based on its NIP (10-digit identifier).
+                    Only accessible by SUPER_ADMIN."""
+    )
+    @IsSuperAdmin
+    @GetMapping("/{nip}")
+    public ResponseEntity<CompanyDto> getCompany(
+            @PathVariable @Pattern(regexp = "\\d{10}") String nip
+    ) {
+        Company company = accountManager.getCompany(nip);
+        return ResponseEntity.ok(mapper.toCompanyDto(company));
+    }
+
+    @Operation(
+            summary = "Get paginated list of companies",
+            description = """
+                    Returns a paginated list of companies. Only accessible by SUPER_ADMIN.
+                    Supports pagination with optional page and size parameters.
+                    Maximum page size is limited to 50."""
+    )
+    @IsSuperAdmin
+    @GetMapping()
+    public ResponseEntity<Page<CompanyDto>> getCompanies(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int size
+    ) {
+        int safeSize = Math.min(size, 50);
+        Pageable pageable = PageRequest.of(page, safeSize, Sort.by("id").ascending());
+        Page<Company> companies = accountManager.getCompanies(pageable);
+        Page<CompanyDto> response = companies.map(mapper::toCompanyDto);
+        return ResponseEntity.ok(response);
     }
 
     @Operation(

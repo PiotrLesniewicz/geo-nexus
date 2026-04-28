@@ -1,5 +1,6 @@
 package com.geo.survey.api.mapper;
 
+import com.geo.survey.api.dto.CompanyDto;
 import com.geo.survey.api.dto.RegisterCompanyRequest;
 import com.geo.survey.api.dto.RegisterUserRequest;
 import com.geo.survey.api.dto.UserResponseDto;
@@ -55,4 +56,6 @@ public interface AccountApiMapper {
     @Mapping(target = "countJob",   source = "countJob")
     @Mapping(target = "openJob",    source = "openJob")
     UserResponseDto toUserDto(UserSummary user);
+
+    CompanyDto toCompanyDto(Company company);
 }

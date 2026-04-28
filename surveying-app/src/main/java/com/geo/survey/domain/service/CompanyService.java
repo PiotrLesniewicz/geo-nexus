@@ -7,6 +7,8 @@ import com.geo.survey.infrastructure.database.entity.CompanyEntity;
 import com.geo.survey.infrastructure.database.repository.CompanyRepository;
 import com.geo.survey.infrastructure.mapper.CompanyMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -61,5 +63,10 @@ public class CompanyService {
         if (companyRepository.existsByNip(nip)) {
             throw new BusinessRuleViolationException("Company with nip [%s] already exists".formatted(nip));
         }
+    }
+
+    public Page<Company> getCompanies(Pageable pageable) {
+        return companyRepository.findAll(pageable)
+                .map(mapper::toDomain);
     }
 }
