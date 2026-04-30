@@ -65,4 +65,14 @@ public class JobService {
     public int countOpenByUserId(Long userId) {
         return jobRepository.countOpenByUserId(userId);
     }
+
+    public void closeJob(Job job) {
+        JobEntity entity = jobMapper.toEntity(job.close());
+        jobRepository.save(entity);
+    }
+
+    public void openJob(Job job) {
+        JobEntity entity = jobMapper.toEntity(job.open());
+        jobRepository.save(entity);
+    }
 }

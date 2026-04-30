@@ -205,6 +205,30 @@ class JobControllerTest {
 
     }
 
+    // PATCH /api/v1/jobs/close — closeJob
+
+    @Test
+    void shouldReturn204_whenCloseJob() throws Exception {
+        mockMvc.perform(patch("/api/v1/jobs/close")
+                        .param("jobIdentifier", JOB_IDENTIFIER)
+                        .with(user(getUserDetails())))
+                .andExpect(status().isNoContent());
+
+        verify(jobSurveyManager).closeJob(eq(JOB_IDENTIFIER), anyLong());
+    }
+
+    // PATCH /api/v1/jobs/open — openJob
+
+    @Test
+    void shouldReturn204_whenOpenJob() throws Exception {
+        mockMvc.perform(patch("/api/v1/jobs/open")
+                        .param("jobIdentifier", JOB_IDENTIFIER)
+                        .with(user(getUserDetails())))
+                .andExpect(status().isNoContent());
+
+        verify(jobSurveyManager).openJob(eq(JOB_IDENTIFIER), anyLong());
+    }
+
     // Helpers
 
     private static @NotNull CustomUserDetails getUserDetails() {

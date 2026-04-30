@@ -55,6 +55,33 @@ public class JobController {
     }
 
     @Operation(
+            summary = "Close job",
+            description = "Closes an active survey job."
+    )
+    @PatchMapping("/close")
+    public ResponseEntity<Void> closeJob(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam @NotBlank String jobIdentifier
+    ) {
+        jobSurveyManager.closeJob(jobIdentifier, userDetails.getUserId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "Open job",
+            description = "Reopens a previously closed survey job."
+    )
+    @PatchMapping("/open")
+    public ResponseEntity<Void> openJob(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam @NotBlank String jobIdentifier
+    ) {
+        jobSurveyManager.openJob(jobIdentifier, userDetails.getUserId());
+        return ResponseEntity.noContent().build();
+    }
+
+
+    @Operation(
             summary = "Get job by identifier",
             description = "Returns job details for a given job identifier within the company"
     )

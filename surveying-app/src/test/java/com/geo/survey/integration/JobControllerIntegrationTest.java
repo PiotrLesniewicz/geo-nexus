@@ -291,6 +291,62 @@ class JobControllerIntegrationTest extends TestContainerConfig {
                 .andExpect(jsonPath("$.content[1].jobIdentifier").value("TEST-JOB-004"));
     }
 
+    // PATCH /api/v1/jobs/close
+
+    @Test
+    @WithUserDetails(ADMIN_EMAIL)
+    void shouldCloseJob_andReturn204() throws Exception {
+        mockMvc.perform(patch("/api/v1/jobs/close")
+                        .param("jobIdentifier", JOB_IDENTIFIER))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithUserDetails(ADMIN_EMAIL)
+    void shouldReturn409_whenClosingAlreadyClosedJob() throws Exception {
+        String closedJobId = "JOB-2024-CLOSED";
+        mockMvc.perform(patch("/api/v1/jobs/close", closedJobId)
+                .param("jobIdentifier", closedJobId))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    @WithUserDetails(SURVEYOR_EMAIL)
+    void shouldReturn404_whenClosingNonExistentJob() throws Exception {
+        String nonExistentJob = "NON_EXISTENT_JOB";
+        mockMvc.perform(patch("/api/v1/jobs/close", nonExistentJob)
+                .param("jobIdentifier", JOB_IDENTIFIER))
+                .andExpect(status().isNotFound());
+    }
+
+// PATCH /api/v1/jobs/open
+
+    @Test
+    @WithUserDetails(ADMIN_EMAIL)
+    void shouldOpenJob_andReturn204() throws Exception {
+        String closedJobId = "JOB-2024-CLOSED";
+        mockMvc.perform(patch("/api/v1/jobs/open")
+                .param("jobIdentifier", closedJobId))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithUserDetails(ADMIN_EMAIL)
+    void shouldReturn409_whenOpeningAlreadyOpenJob() throws Exception {
+        mockMvc.perform(patch("/api/v1/jobs/open", JOB_IDENTIFIER)
+                .param("jobIdentifier", JOB_IDENTIFIER))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    @WithUserDetails(SURVEYOR_EMAIL)
+    void shouldReturn404_whenOpeningNonExistentJob() throws Exception {
+        String nonExistentJob = "NON_EXISTENT_JOB";
+        mockMvc.perform(patch("/api/v1/jobs/open", nonExistentJob)
+                .param("jobIdentifier", JOB_IDENTIFIER))
+                .andExpect(status().isNotFound());
+    }
+
     // helper
 
     private MockMultipartFile buildMultipartFile(String resourcePath, String filename) {

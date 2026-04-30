@@ -29,4 +29,16 @@ public class Job {
                 .user(user)
                 .build();
     }
+
+    public Job open() {
+        return this.toBuilder()
+                .status(StatusJob.OPEN)
+                .build();
+    }
+
+    public Job close() {
+        return this.toBuilder()
+                .status(StatusJob.CLOSED)
+                .build();
+    }
 }

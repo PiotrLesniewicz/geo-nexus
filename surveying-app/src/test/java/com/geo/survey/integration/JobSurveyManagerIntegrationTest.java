@@ -337,6 +337,75 @@ class JobSurveyManagerIntegrationTest extends TestContainerConfig {
                 .hasMessageContaining("Job not found");
     }
 
+    // closeJob tests
+
+    @Test
+    void shouldCloseJob_whenJobIsOpen() {
+        // when
+        jobSurveyManager.closeJob(JOB_IDENTIFIER, USER_ID_1);
+
+        // then
+        Job job = jobSurveyManager.findJobByIdentifier(COMPANY_ID, JOB_IDENTIFIER);
+        assertThat(job.getStatus()).isEqualTo(StatusJob.CLOSED);
+    }
+
+    @Test
+    void shouldThrowException_whenClosingAlreadyClosedJob() {
+        // given — JOB-2024-CLOSED is already closed in test_data_job_leveling.sql
+        String closedJobIdentifier = "JOB-2024-CLOSED";
+
+        // when, then
+        assertThatThrownBy(() -> jobSurveyManager.closeJob(closedJobIdentifier, USER_ID_1))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("Only open jobs can be closed");
+    }
+
+    @Test
+    void shouldThrowException_whenClosingNonExistentJob() {
+        assertThatThrownBy(() -> jobSurveyManager.closeJob("NON-EXISTENT-JOB", USER_ID_1))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+// openJob tests
+
+    @Test
+    void shouldOpenJob_whenJobIsClosed() {
+        // given
+        String closedJobIdentifier = "JOB-2024-CLOSED";
+
+        // when
+        jobSurveyManager.openJob(closedJobIdentifier, USER_ID_1);
+
+        // then
+        Job job = jobSurveyManager.findJobByIdentifier(COMPANY_ID, closedJobIdentifier);
+        assertThat(job.getStatus()).isEqualTo(StatusJob.OPEN);
+    }
+
+    @Test
+    void shouldThrowException_whenOpeningAlreadyOpenJob() {
+        // given — JOB-2024-001 is OPEN
+        assertThatThrownBy(() -> jobSurveyManager.openJob(JOB_IDENTIFIER, USER_ID_1))
+                .isInstanceOf(BusinessRuleViolationException.class);
+    }
+
+    @Test
+    void shouldThrowException_whenOpeningNonExistentJob() {
+        assertThatThrownBy(() -> jobSurveyManager.openJob("NON-EXISTENT-JOB", USER_ID_1))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+// closeJob -> openJob round-trip
+
+    @Test
+    void shouldCloseAndReopenJob() {
+        // when
+        jobSurveyManager.closeJob(JOB_IDENTIFIER, USER_ID_1);
+        jobSurveyManager.openJob(JOB_IDENTIFIER, USER_ID_1);
+
+        // then
+        Job job = jobSurveyManager.findJobByIdentifier(COMPANY_ID, JOB_IDENTIFIER);
+        assertThat(job.getStatus()).isEqualTo(StatusJob.OPEN);
+    }
 
     // helper
 

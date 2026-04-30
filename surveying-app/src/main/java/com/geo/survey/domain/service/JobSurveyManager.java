@@ -80,4 +80,22 @@ public class JobSurveyManager {
         }
         jobService.delete(jobIdentifier, companyId);
     }
+
+    @Transactional
+    public void closeJob(String jobIdentifier, Long userId) {
+        Job job = jobService.getByJobIdentifier(jobIdentifier, userId);
+        if (job.getStatus() != StatusJob.OPEN) {
+            throw new BusinessRuleViolationException("Only open jobs can be closed");
+        }
+        jobService.closeJob(job);
+    }
+
+    @Transactional
+    public void openJob(String jobIdentifier, Long userId) {
+        Job job = jobService.getByJobIdentifier(jobIdentifier, userId);
+        if (job.getStatus() != StatusJob.CLOSED) {
+            throw new BusinessRuleViolationException("Only close jobs can be opened");
+        }
+        jobService.openJob(job);
+    }
 }
