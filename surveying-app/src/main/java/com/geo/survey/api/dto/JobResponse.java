@@ -1,6 +1,7 @@
 package com.geo.survey.api.dto;
 
 import com.geo.survey.domain.model.StatusJob;
+
 import java.time.OffsetDateTime;
 
 public record JobResponse(
@@ -20,4 +21,5 @@ public record JobResponse(
         String nip,
         String userName,
         String userSurname
-) {}
+) {
+}

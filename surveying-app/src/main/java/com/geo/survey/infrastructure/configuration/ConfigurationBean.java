@@ -7,8 +7,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.geo.survey.math.engine.LevelingEngine;
 import com.geo.survey.math.engine.OneWayDoubleLeveling;
 import com.geo.survey.math.engine.OneWayLeveling;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -36,9 +39,19 @@ public class ConfigurationBean {
     public OpenAPI openAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("GeoSurvey API")
+                        .title("Geo-Nexus API")
                         .description("REST API for geodetic survey management")
-                        .version("1.0.0"));
+                        .version("1.0.0"))
+                .components(new Components()
+                        .addSecuritySchemes("bearerAuth",
+                                new SecurityScheme()
+                                        .type(SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT")
+                        )
+                )
+                .addSecurityItem(new SecurityRequirement()
+                        .addList("bearerAuth"));
     }
 
     @Bean

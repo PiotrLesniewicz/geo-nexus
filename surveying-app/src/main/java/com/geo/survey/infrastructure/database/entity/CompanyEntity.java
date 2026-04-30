@@ -7,7 +7,7 @@ import java.time.OffsetDateTime;
 
 @Getter
 @Setter
-@ToString(of = {"name" , "nip"})
+@ToString(of = {"name", "nip"})
 @EqualsAndHashCode(of = "id")
 @AllArgsConstructor
 @NoArgsConstructor
@@ -20,19 +20,19 @@ public class CompanyEntity {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "name" , nullable = false)
+    @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "nip" , unique = true)
+    @Column(name = "nip", unique = true)
     private String nip;
 
     @Embedded
     private AddressEntity address;
 
-    @Column(name = "active" , nullable = false)
+    @Column(name = "active", nullable = false)
     private boolean active;
 
-    @Column(name = "register_at" , nullable = false)
+    @Column(name = "register_at", nullable = false)
     private OffsetDateTime registerAt;
 
     @Column(name = "blocked_at")

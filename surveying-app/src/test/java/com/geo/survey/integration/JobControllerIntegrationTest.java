@@ -306,7 +306,7 @@ class JobControllerIntegrationTest extends TestContainerConfig {
     void shouldReturn409_whenClosingAlreadyClosedJob() throws Exception {
         String closedJobId = "JOB-2024-CLOSED";
         mockMvc.perform(patch("/api/v1/jobs/close", closedJobId)
-                .param("jobIdentifier", closedJobId))
+                        .param("jobIdentifier", closedJobId))
                 .andExpect(status().isConflict());
     }
 
@@ -315,7 +315,7 @@ class JobControllerIntegrationTest extends TestContainerConfig {
     void shouldReturn404_whenClosingNonExistentJob() throws Exception {
         String nonExistentJob = "NON_EXISTENT_JOB";
         mockMvc.perform(patch("/api/v1/jobs/close", nonExistentJob)
-                .param("jobIdentifier", JOB_IDENTIFIER))
+                        .param("jobIdentifier", JOB_IDENTIFIER))
                 .andExpect(status().isNotFound());
     }
 
@@ -326,7 +326,7 @@ class JobControllerIntegrationTest extends TestContainerConfig {
     void shouldOpenJob_andReturn204() throws Exception {
         String closedJobId = "JOB-2024-CLOSED";
         mockMvc.perform(patch("/api/v1/jobs/open")
-                .param("jobIdentifier", closedJobId))
+                        .param("jobIdentifier", closedJobId))
                 .andExpect(status().isNoContent());
     }
 
@@ -334,7 +334,7 @@ class JobControllerIntegrationTest extends TestContainerConfig {
     @WithUserDetails(ADMIN_EMAIL)
     void shouldReturn409_whenOpeningAlreadyOpenJob() throws Exception {
         mockMvc.perform(patch("/api/v1/jobs/open", JOB_IDENTIFIER)
-                .param("jobIdentifier", JOB_IDENTIFIER))
+                        .param("jobIdentifier", JOB_IDENTIFIER))
                 .andExpect(status().isConflict());
     }
 
@@ -343,7 +343,7 @@ class JobControllerIntegrationTest extends TestContainerConfig {
     void shouldReturn404_whenOpeningNonExistentJob() throws Exception {
         String nonExistentJob = "NON_EXISTENT_JOB";
         mockMvc.perform(patch("/api/v1/jobs/open", nonExistentJob)
-                .param("jobIdentifier", JOB_IDENTIFIER))
+                        .param("jobIdentifier", JOB_IDENTIFIER))
                 .andExpect(status().isNotFound());
     }
 

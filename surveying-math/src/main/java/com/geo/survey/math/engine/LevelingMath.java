@@ -4,6 +4,14 @@ import com.geo.survey.math.value.LevelingObservation;
 
 import java.util.List;
 
+/*
+ * Precision note: calculations use double (64-bit IEEE 754, ~15-16 significant digits).
+ * Geodetic leveling measurements are recorded to 0.001m accuracy.
+ * Misclosure tolerance formula (0.020 * sqrt(L_km)) operates in the range of millimeters.
+ * Double precision is sufficient for this domain — accumulated floating-point error
+ * remains several orders of magnitude below the measurement tolerance.
+ * BigDecimal would add complexity and performance overhead without practical benefit.
+ */
 final class LevelingMath {
 
     private LevelingMath() {
@@ -11,6 +19,8 @@ final class LevelingMath {
 
     private static final double TOLERANCE_FACTOR_PER_KILOMETER = 0.0200;
     private static final double TOLERANCE_FACTOR_PER_STATION = 0.0040;
+    /* EPSILON used to guard against floating-point noise in zero-distance comparisons,
+     not as a substitute for BigDecimal precision. */
     private static final double EPSILON = 0.00001;
     private static final double METER_TO_KILOMETER = 1000.0;
 
@@ -75,7 +85,7 @@ final class LevelingMath {
                     .mapToDouble(obs -> (obs.backDistance() + obs.foreDistance()) / METER_TO_KILOMETER)
                     .sum();
         }
-        return 0.0; //0.0 is a valid measured value,
+        return 0.0; //0.0 is a valid-measured value,
         // missing second measurement must be handled during validation.
     }
 
@@ -94,7 +104,7 @@ final class LevelingMath {
     static double getStationError(final LevelingObservation obs) {
         return obs.getDiffElevSecond()
                 .map(second -> (obs.getDiffElevFirst() - second) / 2)
-                .orElse(0.0); //0.0 is a valid measured value,
+                .orElse(0.0); //0.0 is a valid-measured value,
         // missing second measurement must be handled during validation.
     }
 

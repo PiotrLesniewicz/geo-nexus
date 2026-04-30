@@ -46,15 +46,15 @@ public interface AccountApiMapper {
     @Mapping(target = "company", ignore = true)
     User toUser(RegisterUserRequest request);
 
-    @Mapping(target = "email",      source = "user.email")
-    @Mapping(target = "name",       source = "user.name")
-    @Mapping(target = "surname",    source = "user.surname")
-    @Mapping(target = "role",       source = "user.role")
-    @Mapping(target = "active",     source = "user.active")
+    @Mapping(target = "email", source = "user.email")
+    @Mapping(target = "name", source = "user.name")
+    @Mapping(target = "surname", source = "user.surname")
+    @Mapping(target = "role", source = "user.role")
+    @Mapping(target = "active", source = "user.active")
     @Mapping(target = "registerAt", source = "user.registerAt")
-    @Mapping(target = "deletedAt",  source = "user.deletedAt")
-    @Mapping(target = "countJob",   source = "countJob")
-    @Mapping(target = "openJob",    source = "openJob")
+    @Mapping(target = "deletedAt", source = "user.deletedAt")
+    @Mapping(target = "countJob", source = "countJob")
+    @Mapping(target = "openJob", source = "openJob")
     UserResponseDto toUserDto(UserSummary user);
 
     CompanyDto toCompanyDto(Company company);

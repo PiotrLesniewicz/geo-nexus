@@ -40,4 +40,5 @@ public record CreateJobRequest(
 
         @Size(max = 100, message = "Country must not exceed 100 characters")
         String country
-) {}
+) {
+}

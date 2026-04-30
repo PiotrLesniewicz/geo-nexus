@@ -14,6 +14,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Constraint(validatedBy = NotSuperAdminValidator.class)
 public @interface NotSuperAdmin {
     String message() default "Cannot assign SUPER_ADMIN role";
+
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
 }
