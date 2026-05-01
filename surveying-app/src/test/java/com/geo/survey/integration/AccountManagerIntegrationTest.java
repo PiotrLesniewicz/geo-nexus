@@ -52,7 +52,7 @@ class AccountManagerIntegrationTest extends TestContainerConfig {
 
     private static final Company DEFAULT_COMPANY = Company.builder()
             .name("Test Company")
-            .nip("777-777-777")
+            .nip("7777777777")
             .build();
 
     private static final User DEFAULT_USER = User.builder()

@@ -92,7 +92,7 @@ CREATE TABLE leveling_report
     misclosure             NUMERIC(10, 4) NOT NULL,
     allowed_misclosure     NUMERIC(10, 4) NOT NULL CHECK (allowed_misclosure >= 0),
     tolerance_met          BOOLEAN        NOT NULL,
-    sequence_distance      NUMERIC(10, 4) CHECK (sequence_distance >= 0),
+    sequence_distance      NUMERIC(10, 2) CHECK (sequence_distance >= 0),
     stations               JSONB          NOT NULL,
     observation_time       TIMESTAMPTZ    NOT NULL,
     generated_at           TIMESTAMPTZ    NOT NULL DEFAULT NOW()
