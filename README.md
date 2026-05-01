@@ -1,33 +1,81 @@
+> 🚧 Project in active development.
+>
+> Core backend functionality is complete (authentication, job management, leveling calculations).
+Currently extending the system with new measurement types and export features.
+
 # GeoNexus
 
-A backend application for managing geodetic surveying work — starting with leveling calculations,
-designed as an extensible platform for further measurement types.
+GeoNexus is a backend system for processing leveling survey sequences and generating corrected measurement reports.
 
-> 🚧 Project in active development. This README reflects the current state and will be updated as the project evolves.
+It enables calculation of misclosure, tolerance verification, and automatic adjustment of height differences for engineering and construction workflows.
 
 ---
 
-## Overview
+## Key Highlights
 
-GeoNexus allows surveying companies to manage field measurement data, perform geodetic calculations,
-persist results and generate reports. The initial scope covers leveling surveys (niwelacja),
-with the architecture intentionally designed to support additional measurement types in the future.
-
-The project serves as a portfolio piece demonstrating end-to-end Java/Spring Boot development
-with a focus on clean architecture, testability and domain-driven design.
+- Domain logic isolated from Spring — pure Java module, no framework coupling
+- JWT authentication with stateless Spring Security filter chain
+- Integration tests with real PostgreSQL (Testcontainers), coverage ≥80% enforced by JaCoCo
+- JSONB for immutable measurement snapshots — no schema changes for new measurement types, optimized for flexibility over relational querying
+- Strategy pattern for calculation engine — new measurement types added via new implementations without modifying existing logic
 
 ---
 
 ## Modules
 
-The project is a multi-module Gradle build composed of two modules:
+**`surveying-math`** —  pure Java, zero Spring dependency. Leveling engines, tolerance checks, misclosure calculations. Fully unit-testable in isolation. Can be reused independently as a calculation engine.
+**`surveying-app`** — Spring Boot application. REST API, persistence, security, file parsing, orchestration. Depends on `surveying-math` for calculations.
 
-**`surveying-math`** — pure Java library with no Spring dependency. Contains all geodetic calculation logic:
-leveling algorithms, tolerance checks, misclosure calculations. Designed to be testable in isolation
-and reusable independently of any framework.
+---
 
-**`surveying-app`** — Spring Boot application. Handles persistence, REST API, security, file parsing
-and orchestration. Depends on `surveying-math` for calculation logic.
+## Request Flow
+
+```
+HTTP Request → Controller → Domain Service → surveying-math → Repository → Database
+```
+
+**Leveling file processing:**
+
+```
+File → Parser → Validation → LevelingStrategy → LevelingEngine → Persist (JSONB) → Response
+```
+
+Parser auto-detects format (CSV / TXT) by filename. New formats registered as `@Component` — no changes to existing code.
+
+---
+
+## Key Design Decisions
+
+**Domain isolation** — domain model has no JPA/Spring annotations. `surveying-math` is a standalone library. Business logic tested without loading Spring context.
+
+**Extensible calculation engine** — `LevelingStrategy` selects the correct `LevelingEngine` at runtime. Adding a new measurement type = implementing one interface.
+
+**JSONB for measurement snapshots** — immutable station results stored as JSONB. Flexible schema, backward compatible, no per-type migrations.
+
+**Unidirectional relationships** — User holds `company_id`, no bidirectional collections. Avoids N+1 without explicit fetch tuning.
+
+**Clock injection** — `Clock` injected as a Spring bean, no `Instant.now()` in business logic. Tests override it for deterministic timestamp assertions.
+
+**Centralized exception handling** — `GlobalExceptionHandler` maps all domain and security exceptions (`401`, `403`) to HTTP status codes. Every error logged with a unique UUID.
+
+---
+
+## Security
+
+- Stateless JWT (`JwtFilter` → validate token → set `SecurityContext`)
+- Role-based access: `SUPER_ADMIN` · `ADMIN` · `SURVEYOR`
+- Custom annotations: `@IsSuperAdmin`, `@IsAdmin`, `@IsAdminOrSurveyor`
+- Business rule enforced: company must always have at least one active admin
+
+---
+
+## Testing & CI
+
+- **Unit tests** — `surveying-math` in pure Java, no Spring context
+- **Integration tests** — Testcontainers (real PostgreSQL), SQL fixtures via `@Sql`
+- **Controller tests** — `@WebMvcTest` with mocked services
+- **Coverage** — minimum 80% enforced by JaCoCo; excludes DTOs, entities, config, generated code
+- **CI** — GitHub Actions on every push and PR to `master`: build, test, `jacocoTestCoverageVerification`; test and coverage reports uploaded as artifacts
 
 ---
 
@@ -38,137 +86,127 @@ and orchestration. Depends on `surveying-math` for calculation logic.
 | Language | Java 21 |
 | Framework | Spring Boot 3.x |
 | Persistence | Spring Data JPA + Hibernate |
-| Database | PostgreSQL |
+| Database | PostgreSQL + JSONB |
 | Migrations | Flyway |
+| Security | Spring Security + JWT |
 | Mapping | MapStruct |
 | Boilerplate | Lombok |
-| Security | Spring Security (JWT — in progress) |
 | Testing | JUnit 5, Mockito, AssertJ, Testcontainers |
+| CI | GitHub Actions |
+| API Docs | OpenAPI / Swagger UI |
 | Build | Gradle (Kotlin DSL) |
-| Containerization | Docker |
-
----
-
-## Architecture
-
-The `surveying-app` module follows a layered architecture with a clear separation of concerns:
-
-```
-api/
-  controller/       REST controllers, GlobalExceptionHandler
-  dto/              Request/Response DTOs
-  mapper/           MapStruct mappers (domain ↔ DTO)
-
-domain/
-  model/            Domain objects (Company, User, UserAuth, Job, ...)
-  service/          Application services (AccountManager, LevelingService, ...)
-  exception/        Domain exceptions (ResourceNotFoundException, ResourceAlreadyExistsException, ...)
-
-infrastructure/
-  database/
-    entity/         JPA entities
-    repository/     Spring Data repositories
-  mapper/           MapStruct mappers (domain ↔ entity)
-  parser/           File parsers (Trimble, Leica formats)
-  security/         JWT token provider, Spring Security config
-  configuration/    Spring beans, Clock, etc.
-```
-
-Key design decisions:
-- Domain model is framework-agnostic — no JPA annotations in domain objects
-- `surveying-math` module has no Spring dependency — pure Java, fully unit-testable
-- File parsers return `LevelingObservation` directly — no redundant mapping layer
-- Unidirectional `user → company` relation — avoids N+1 on company queries
-- `Clock` injected as a Spring bean — enables deterministic time-based tests
+| Containerization | Docker Compose |
 
 ---
 
 ## Domain
 
-### Company & User accounts
+Leveling determines precise height differences between ground points — a critical process in construction and infrastructure projects.
 
-A `Company` is an independent entity. A `User` always belongs to a company (`company_id NOT NULL`).
-The first user registered for a company is automatically assigned the `ADMIN` role.
-Subsequent users are added by the admin. A company must always have at least one active admin.
+Measurement errors accumulate across stations (misclosure), requiring validation against tolerance limits and adjustment of results to ensure engineering accuracy.
 
-### Leveling calculations
+Supported modes:
 
-Supports two calculation modes:
+- **ONE_WAY** — single-direction, one backsight + one foresight per station
 
-- **ONE_WAY** — single-direction leveling, supports both absolute (with known start/end heights) and relative mode
-- **ONE_WAY_DOUBLE** — double leveling with station error calculation
+- **ONE_WAY_DOUBLE** — double reading per station, enables per-station error detection
 
-Calculation flow:
-```
-File upload → Parser → Validator → LevelingObservation → MathEngine → Result → (user accepts) → Persist + Report
-```
+Both modes calculate misclosure and verify against tolerance.
 
-Results include: height differences, corrections, adjusted heights, misclosure, allowed misclosure,
-tolerance check per station and for the whole sequence.
+Results are returned as structured JSON responses, with planned support for PDF report export.
 
 ---
 
-## Data model
+## Running Locally
 
-```sql
-company         -- surveying company
-user_account    -- user belonging to a company
-user_auth       -- hashed password, must_change flag
-job             -- surveying job/project assigned to company and user
-leveling_report -- calculation result with stations snapshot (JSONB)
-```
-
-Station snapshots are stored as `JSONB` — results are immutable after acceptance,
-independent of any future changes to the station model.
-
----
-
-## Testing approach
-
-- **Unit tests** — service logic tested with Mockito, real `PasswordEncoder` and MapStruct implementations
-  where it adds value, mocks only for repositories and `Clock`
-- **Integration tests** — `@SpringBootTest` with Testcontainers (real PostgreSQL), no rollback,
-  real database writes verified by direct repository queries
-- TDD practiced throughout — tests written before implementation
-
----
-
-## Current status
-
-- [x] surveying-math module (leveling engine, ONE_WAY, ONE_WAY_DOUBLE)
-- [x] Database schema + Flyway migrations
-- [x] JPA entities + repositories
-- [x] Domain model (Company, User, UserAuth, Job, LevelingReport)
-- [x] AccountManager — company registration with admin (TDD, integration tests)
-- [ ] AccountManager — add user to existing company
-- [ ] LevelingService — file parsing, calculation, persistence
-- [ ] REST API layer
-- [ ] JWT authentication
-- [ ] Report generation
-
----
-
-## Running locally
-
-> Prerequisites: Docker, Java 21
+Requirements: Docker, Java 21
 
 ```bash
-# Start PostgreSQL
-docker-compose up -d
-
-# Run application
+docker compose up -d
 ./gradlew :surveying-app:bootRun
-
-# Run tests
 ./gradlew test
+./gradlew jacocoTestReport   # coverage → build/jacocoHtml/
 ```
+
+Flyway runs migrations automatically on startup — schema and seed data included. The app starts with 3 companies, 9 users and 5 jobs ready to use.
 
 ---
 
-## Future roadmap
+## Try it out
 
-- Invitation token system — admin generates a one-time link for self-registration
-- Additional measurement types (tachymetry, GPS)
-- Password reset / change flow
-- Report export (PDF)
-- Free tier with automatic cleanup after 21 days of inactivity
+Bruno collection available in `/bruno` — import folder into Bruno for ready-to-use requests.
+
+Full API reference and interactive testing available via Swagger UI: `http://localhost:8080/swagger-ui.html`
+
+Sample leveling files are in [`/sample-files`](./sample-files):
+- `leveling_one_way.csv` — 5 stations, misclosure 0.001m, passes tolerance
+- `leveling_one_way_double.csv` — 4 stations with double readings, passes tolerance
+- `leveling_one_way_tolerance_exceeded.csv` — misclosure 0.036m, exceeds allowed 0.022m
+
+The API returns full calculation results including misclosure, tolerance validation, and adjusted station heights.
+
+### 1. Authenticate
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "jan.kowalski@geosurvey.pl", "password": "GeoAdmin1!"}'
+```
+
+Copy token from response and replace `<JWT>` in subsequent requests.
+
+### 2. Check existing jobs
+
+```bash
+curl "http://localhost:8080/api/v1/jobs?jobIdentifier=JOB-2024-001" \
+  -H "Authorization: Bearer <JWT>"
+```
+
+### 3. Upload a leveling file
+
+```bash
+curl -X POST http://localhost:8080/api/v1/jobs/leveling \
+  -H "Authorization: Bearer <JWT>" \
+  -F "file=@sample-files/leveling_one_way.csv" \
+  -F "jobIdentifier=JOB-2024-001" \
+  -F "startH=100.000" \
+  -F "endH=101.250" \
+  -F "type=ONE_WAY" \
+  -F "observationTime=2024-06-15T10:00:00Z"
+```
+
+Response includes full calculation result: misclosure, allowedMisclosure, toleranceMet, adjusted heights per station.
+
+### 4. Try tolerance exceeded
+
+Same request with `leveling_one_way_tolerance_exceeded.csv` and `endH=100.500`. Response returns `"toleranceMet": false`.
+
+### 5. Get paginated reports
+
+```bash
+curl "http://localhost:8080/api/v1/jobs/leveling?jobIdentifier=JOB-2024-001&page=0&size=10" \
+  -H "Authorization: Bearer <JWT>"
+```
+
+### 6. Get companies
+```bash
+# Example of an endpoint accessible only to SUPER_ADMIN role
+curl "http://localhost:8080/api/v1/companies" \
+-H "Authorization: Bearer <JWT>"
+```
+
+### Seed credentials
+
+| Role        | Email | Password |
+|-------------|---|---|
+| SUPER_ADMIN | super_admin@sp.sp | Super_admin! |
+| ADMIN       | jan.kowalski@geosurvey.pl | GeoAdmin1! |
+| ADMIN       | katarzyna.lis@geodeta.pl | GeoAdmin1! |
+| SURVEYOR    | anna.nowak@geosurvey.pl | GeoSurvey1! |
+| SURVEYOR    | monika.krol@geodeta.pl | GeoSurvey1! |
+
+---
+
+## In Progress
+
+- PDF report export
