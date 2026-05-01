@@ -1,0 +1,10 @@
+info:
+  name: auth-controller
+  type: folder
+  seq: 2
+
+request:
+  auth:
+    type: basic
+    username: jan.kowalski@geosurvey.pl
+    password: GeoAdmin1!
