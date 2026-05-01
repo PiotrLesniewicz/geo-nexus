@@ -25,7 +25,7 @@ public class JobService {
     private final Clock clock;
 
     public Job create(Job job, Company company, User user) {
-        if (jobRepository.existsByJobIdentifier(job.getJobIdentifier())) {
+        if (existsByJobIdentifierAndCompanyId(job.getJobIdentifier(), company.getId())) {
             throw new BusinessRuleViolationException(
                     "Job already exists with identifier: [%s]".formatted(job.getJobIdentifier()));
         }
@@ -74,5 +74,9 @@ public class JobService {
     public void openJob(Job job) {
         JobEntity entity = jobMapper.toEntity(job.open());
         jobRepository.save(entity);
+    }
+
+    public boolean existsByJobIdentifierAndCompanyId(String jobIdentifier, Long companyId) {
+        return jobRepository.existsByJobIdentifierAndCompanyId(jobIdentifier, companyId);
     }
 }

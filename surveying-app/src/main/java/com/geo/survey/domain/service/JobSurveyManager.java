@@ -2,6 +2,7 @@ package com.geo.survey.domain.service;
 
 import com.geo.survey.domain.exception.BusinessRuleViolationException;
 import com.geo.survey.domain.exception.ParsingException;
+import com.geo.survey.domain.exception.ResourceNotFoundException;
 import com.geo.survey.domain.exception.UnauthorizedAccessException;
 import com.geo.survey.domain.model.*;
 import com.geo.survey.math.value.LevelingType;
@@ -61,7 +62,10 @@ public class JobSurveyManager {
         return jobService.getByJobIdentifier(jobIdentifier, companyId);
     }
 
-    public Page<LevelingReport> findLevelingReports(String jobIdentifier, Long companyId, Pageable pageable) {
+    public Page<LevelingReport> findLevelingReports(String jobIdentifier, Long companyId, Pageable pageable) throws BusinessRuleViolationException {
+        if (!jobService.existsByJobIdentifierAndCompanyId(jobIdentifier, companyId)) {
+            throw new ResourceNotFoundException("Job with identifier [%s] does not exist".formatted(jobIdentifier));
+        }
         return levelingService.findLevelingReports(jobIdentifier, companyId, pageable);
     }
 

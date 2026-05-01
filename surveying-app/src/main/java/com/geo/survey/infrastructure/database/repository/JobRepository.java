@@ -11,7 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.Optional;
 
 public interface JobRepository extends JpaRepository<JobEntity, Long> {
-    boolean existsByJobIdentifier(String jobIdentifier);
+    boolean existsByJobIdentifierAndCompanyId(String jobIdentifier, Long companyId);
 
     Page<JobEntity> findAllByCompanyId(Long companyId, Pageable pageable);
 

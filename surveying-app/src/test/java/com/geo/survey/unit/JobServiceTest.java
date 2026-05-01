@@ -78,7 +78,7 @@ class JobServiceTest {
         Company company = CompanyFixture.activeCompanyWithId();
         User user = UserFixture.activeUser();
 
-        when(jobRepository.existsByJobIdentifier(DEFAULT_JOB_IDENTIFIER)).thenReturn(false);
+        when(jobRepository.existsByJobIdentifierAndCompanyId(DEFAULT_JOB_IDENTIFIER, company.getId())).thenReturn(false);
         when(jobRepository.save(any(JobEntity.class)))
                 .thenAnswer(i -> {
                     JobEntity entity = i.getArgument(0);
@@ -109,7 +109,7 @@ class JobServiceTest {
         assertThat(result.getCompany().getId()).isEqualTo(company.getId());
         assertThat(result.getUser().getEmail()).isEqualTo(user.getEmail());
 
-        verify(jobRepository).existsByJobIdentifier(DEFAULT_JOB_IDENTIFIER);
+        verify(jobRepository).existsByJobIdentifierAndCompanyId(DEFAULT_JOB_IDENTIFIER, company.getId());
         verify(jobRepository).save(any(JobEntity.class));
     }
 
@@ -120,7 +120,7 @@ class JobServiceTest {
         Company company = CompanyFixture.activeCompanyWithId();
         User user = UserFixture.activeUser();
 
-        when(jobRepository.existsByJobIdentifier(DEFAULT_JOB_IDENTIFIER)).thenReturn(true);
+        when(jobRepository.existsByJobIdentifierAndCompanyId(DEFAULT_JOB_IDENTIFIER, company.getId())).thenReturn(true);
 
         // when, then
         assertThatThrownBy(() -> jobService.create(jobToCreate, company, user))
@@ -128,7 +128,7 @@ class JobServiceTest {
                 .hasMessageContaining("Job already exists")
                 .hasMessageContaining(DEFAULT_JOB_IDENTIFIER);
 
-        verify(jobRepository).existsByJobIdentifier(DEFAULT_JOB_IDENTIFIER);
+        verify(jobRepository).existsByJobIdentifierAndCompanyId(DEFAULT_JOB_IDENTIFIER, company.getId());
         verify(jobRepository, never()).save(any());
     }
 
